@@ -1,0 +1,236 @@
+/* Estilos responsivos para móviles */
+@media screen and (max-width: 767px) {
+  /* Barra superior adaptable */
+  .accessibility-bar {
+    padding: 10px 15px;
+    flex-direction: column;
+  }
+
+  .brand-btn {
+    font-size: 20px;
+    padding: 10px 20px;
+    margin-bottom: 10px;
+    width: 100%;
+  }
+
+  .promo-banner {
+    width: 100%;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .promo-item {
+    font-size: 16px;
+    padding: 8px 10px;
+  }
+
+  /* Cuadro de búsqueda desplegable */
+  .search-container {
+    position: relative;
+  }
+
+  .search-toggle {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 4px;
+    width: 100%;
+    text-align: left;
+    font-size: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+  }
+  
+  .search-toggle:after {
+    content: "▼";
+    font-size: 12px;
+  }
+  
+  .search-toggle.active:after {
+    content: "▲";
+  }
+  
+  .search-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+  }
+  
+  .search-content.show {
+    max-height: 500px;
+  }
+
+  .search-row {
+    flex-direction: column;
+    margin-top: 10px;
+  }
+  
+  .search-input, .filter-select, .search-btn {
+    width: 100%;
+    margin-bottom: 8px;
+  }
+  
+  /* Filtros desplegables */
+  .filters-toggle {
+    background-color: #f1f1f1;
+    color: #333;
+    border: 1px solid #ddd;
+    padding: 10px;
+    border-radius: 4px;
+    width: 100%;
+    text-align: left;
+    font-size: 16px;
+    margin-top: 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+  }
+  
+  .filters-toggle:after {
+    content: "▼";
+    font-size: 12px;
+  }
+  
+  .filters-toggle.active:after {
+    content: "▲";
+  }
+  
+  .filters-container {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+    margin: 0;
+  }
+  
+  .filters-container.show {
+    max-height: 300px;
+    margin-top: 10px;
+  }
+  
+  .tipo-btns {
+    width: 100%;
+    justify-content: space-between;
+    margin-top: 8px;
+  }
+  
+  .tipo-btn {
+    flex: 1;
+    font-size: 14px;
+    padding: 8px 5px;
+    text-align: center;
+  }
+  
+  /* Ajustes al mapa y elementos relacionados */
+  #map {
+    height: calc(100vh - 180px);
+  }
+  
+  /* Ajustes al modal de producto */
+  .modal-content {
+    width: 95%;
+    margin: 10% auto;
+  }
+  
+  .product-detail {
+    grid-template-columns: 1fr;
+  }
+  
+  .product-images {
+    min-height: 200px;
+  }
+  
+  .main-image {
+    height: 200px;
+  }
+  
+  .thumbnail {
+    width: 50px;
+    height: 50px;
+  }
+  
+  .product-contact {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .contact-btn {
+    width: 100%;
+    margin-right: 0;
+  }
+  
+  /* Info box adaptable */
+  #info-box {
+    width: 85%;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+}
+
+/* Ajustes específicos para teléfonos muy pequeños */
+@media screen and (max-width: 320px) {
+  .brand-btn {
+    font-size: 18px;
+    padding: 8px 15px;
+  }
+  
+  .promo-item {
+    font-size: 14px;
+    padding: 6px 8px;
+  }
+  
+  .tipo-btn {
+    font-size: 12px;
+    padding: 6px 3px;
+  }
+  /* Corrección de posición para el info-box en móviles */
+@media screen and (max-width: 767px) {
+  #info-box {
+    position: fixed;
+    top: auto; /* Eliminar posición top */
+    bottom: 15px; /* Posicionar desde abajo */
+    left: 50%;
+    transform: translateX(-50%); /* Centrar horizontalmente */
+    width: 90%;
+    max-width: 350px;
+    margin: 0; /* Eliminar cualquier margen que pudiera afectar */
+    z-index: 2000;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.2);
+  }
+
+  /* Corregir animaciones para que funcionen desde abajo */
+  #info-box.showing {
+    animation: slide-up-from-bottom 0.3s ease-out forwards;
+  }
+  
+  #info-box.hiding {
+    animation: slide-down-to-bottom 0.3s ease-out forwards;
+  }
+  
+  @keyframes slide-up-from-bottom {
+    from {
+      transform: translateX(-50%) translateY(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+  }
+  
+  @keyframes slide-down-to-bottom {
+    from {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+    to {
+      transform: translateX(-50%) translateY(100%);
+      opacity: 0;
+    }
+  }
+
+}

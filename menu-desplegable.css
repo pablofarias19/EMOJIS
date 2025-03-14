@@ -1,0 +1,74 @@
+/* Estilos para el menú desplegable */
+.accessibility-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+.brand-btn {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 8px 8px 0 0; /* Redondear solo esquinas superiores */
+  z-index: 10;
+  position: relative;
+}
+
+.promo-banner {
+  width: 100%;
+  overflow: hidden;
+  max-height: 500px;
+  transition: max-height 0.3s ease-out;
+}
+
+.promo-banner.hidden {
+  max-height: 0;
+}
+
+/* Ajuste para estilos responsive */
+@media screen and (max-width: 767px) {
+  .brand-btn {
+    border-radius: 8px; /* Redondear todas las esquinas en móvil */
+  }
+  
+  .brand-btn.active {
+    border-radius: 8px 8px 0 0; /* Ajustar cuando está desplegado */
+  }
+  
+  .promo-banner {
+    width: 100%;
+  }
+  
+  .promo-item {
+    margin-top: 5px;
+  }
+  
+  /* Añadir animación para móviles */
+  .promo-banner {
+    transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
+    opacity: 1;
+  }
+  
+  .promo-banner.hidden {
+    opacity: 0;
+  }
+}
+
+/* Estilo visual para el botón desplegado */
+.brand-btn:focus {
+  outline: 2px dashed #ff9800;
+  outline-offset: 2px;
+}
+
+/* Indicador visual para el botón */
+.toggle-icon {
+  margin-left: 10px;
+  font-size: 12px;
+  transition: transform 0.3s ease;
+}
+
+.brand-btn[aria-expanded="true"] .toggle-icon {
+  transform: rotate(180deg);
+}

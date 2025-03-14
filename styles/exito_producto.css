@@ -1,0 +1,172 @@
+/* Estilos para la página de éxito - Fecha: 2025-03-13 17:40:36 */
+
+:root {
+    --color-primario: #4CAF50;
+    --color-secundario: #2196F3;
+    --color-texto: #333;
+    --color-fondo: #f9f9f9;
+    --color-borde: #ddd;
+    --sombra-card: 0 4px 8px rgba(0, 0, 0, 0.1);
+    --borde-radius: 8px;
+}
+
+body, html {
+    margin: 0;
+    padding: 0;
+    font-family: 'Arial', sans-serif;
+    background-color: var(--color-fondo);
+    height: 100%;
+}
+
+.contenedor-exito {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    padding: 20px;
+}
+
+.tarjeta-exito {
+    background: white;
+    border-radius: var(--borde-radius);
+    box-shadow: var(--sombra-card);
+    padding: 30px;
+    width: 100%;
+    max-width: 500px;
+    text-align: center;
+    animation: aparecer 0.5s ease-out;
+}
+
+@keyframes aparecer {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.icono-grande {
+    font-size: 5rem;
+    margin-bottom: 20px;
+    animation: pulso 1s infinite alternate;
+}
+
+@keyframes pulso {
+    from {
+        transform: scale(0.95);
+    }
+    to {
+        transform: scale(1.05);
+    }
+}
+
+h1 {
+    color: var(--color-primario);
+    font-size: 1.8rem;
+    margin-bottom: 10px;
+}
+
+.mensaje-exito {
+    font-size: 1.2rem;
+    color: var(--color-texto);
+    margin-bottom: 25px;
+    font-weight: bold;
+}
+
+.detalles-producto {
+    background-color: rgba(76, 175, 80, 0.1);
+    border-radius: var(--borde-radius);
+    padding: 15px;
+    margin-bottom: 25px;
+}
+.detalles-producto p {
+    margin: 5px 0;
+    font-size: 1.1rem;
+}
+
+#titulo-producto {
+    font-weight: bold;
+    color: var(--color-texto);
+}
+
+#tipo-producto {
+    font-size: 0.9rem;
+    color: #666;
+    text-transform: uppercase;
+}
+
+.botones-accion {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.boton-primario, .boton-secundario, .boton-texto {
+    text-decoration: none;
+    padding: 12px 20px;
+    border-radius: var(--borde-radius);
+    font-weight: bold;
+    transition: all 0.3s ease;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+
+.boton-primario {
+    background-color: var(--color-primario);
+    color: white;
+    border: none;
+}
+
+.boton-primario:hover {
+    background-color: #3e8e41;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+}
+
+.boton-secundario {
+    background-color: white;
+    color: var(--color-secundario);
+    border: 2px solid var(--color-secundario);
+}
+
+.boton-secundario:hover {
+    background-color: var(--color-secundario);
+    color: white;
+}
+
+.boton-texto {
+    background: none;
+    color: var(--color-texto);
+    padding: 8px;
+    font-weight: normal;
+    font-size: 0.9rem;
+}
+
+.boton-texto:hover {
+    text-decoration: underline;
+}
+
+.icono-mapa {
+    font-size: 1.2rem;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .tarjeta-exito {
+        padding: 20px;
+    }
+    
+    h1 {
+        font-size: 1.5rem;
+    }
+    
+    .icono-grande {
+        font-size: 4rem;
+    }
+}

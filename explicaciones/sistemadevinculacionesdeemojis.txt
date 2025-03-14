@@ -1,0 +1,105 @@
+# SISTEMA DE VINCULACIÓN DE EMOJIS - GUÍA COMPLETA
+Autor: Pablo Farías
+Fecha: 2023
+
+## ARCHIVOS DEL SISTEMA Y SU FUNCIÓN
+
+### 1. ARCHIVOS PHP (BACKEND)
+
+#### conexion.php
+- Establece la conexión con la base de datos MySQL
+- Contiene credenciales y configuración de PDO
+- Usado por todos los demás scripts PHP
+
+#### crear_tablas_vinculos.php
+- Crea las tablas necesarias: grupos_emoji_vinculos y relaciones_emoji_vinculos
+- Solo se ejecuta una vez al inicio de la implementación
+- Si ya creaste las tablas manualmente, no es necesario
+
+#### obtener_emojis_relacionados.php
+- FUNCIÓN: Obtiene todos los emojis relacionados con un emoji específico
+- PARÁMETROS:
+  * emoji_id: ID del emoji de origen (obligatorio)
+  * grupo_id: ID del grupo para filtrar (opcional)
+- RESPUESTA: JSON con los emojis relacionados y sus datos
+
+#### get_grupos_emoji.php
+- FUNCIÓN: Obtiene la lista de todos los grupos de vinculación
+- RESPUESTA: JSON con los grupos disponibles
+
+#### guardar_grupo_emoji.php
+- FUNCIÓN: Crea o actualiza un grupo de vinculación
+- MÉTODO: POST
+- PARÁMETROS:
+  * id: ID del grupo (0 para nuevo)
+  * nombre: Nombre del grupo
+  * criterio: Criterio de agrupación
+  * descripcion: Descripción detallada
+  * color: Color para visualizar (hex)
+
+#### eliminar_grupo_emoji.php
+- FUNCIÓN: Elimina un grupo y todas sus relaciones
+- PARÁMETROS GET:
+  * id: ID del grupo a eliminar
+
+#### get_relaciones_emoji.php
+- FUNCIÓN: Obtiene todas las relaciones entre emojis
+- RESPUESTA: JSON con todas las relaciones existentes
+
+#### guardar_relacion_emoji.php
+- FUNCIÓN: Crea una relación entre dos emojis
+- MÉTODO: POST
+- PARÁMETROS:
+  * grupo_id: ID del grupo al que pertenece
+  * emoji_origen_id: ID del emoji de origen
+  * emoji_destino_id: ID del emoji de destino
+  * orden: Orden de visualización
+  * etiqueta: Texto para mostrar en la flecha
+  * bidirectional: "1" para crear relación en ambas direcciones
+
+#### eliminar_relacion_emoji.php
+- FUNCIÓN: Elimina una relación específica
+- PARÁMETROS GET:
+  * id: ID de la relación a eliminar
+
+### 2. ARCHIVOS JAVASCRIPT (FRONTEND)
+
+#### emoji-vinculos.js
+- FUNCIÓN PRINCIPAL: Gestiona la visualización y navegación entre emojis vinculados
+- FUNCIONES IMPORTANTES:
+  * inicializarSistemaVinculos(): Inicializa el sistema
+  * mostrarRelacionesEmoji(emojiId, grupoId): Muestra vinculaciones de un emoji
+  * dibujarFlechaRelacion(): Dibuja flechas entre emojis
+  * mostrarPanelVinculos(): Muestra panel de navegación
+  * cerrarNavegacionEmojis(): Limpia las flechas y cierra el panel
+
+### 3. BASE DE DATOS
+
+#### grupos_emoji_vinculos
+- FUNCIÓN: Almacena los grupos de vinculación
+- CAMPOS PRINCIPALES:
+  * id: Identificador único
+  * nombre: Nombre del grupo
+  * criterio: Criterio de agrupación (color, tipo, etc.)
+  * descripcion: Descripción detallada
+  * color: Color para visualización
+
+#### relaciones_emoji_vinculos
+- FUNCIÓN: Almacena las conexiones entre emojis
+- CAMPOS PRINCIPALES:
+  * id: Identificador único
+  * emoji_origen_id: ID del emoji origen
+  * emoji_destino_id: ID del emoji destino
+  * grupo_id: ID del grupo al que pertenece
+  * orden: Orden para visualización
+  * etiqueta: Texto para mostrar en la flecha
+
+## CÓMO FUNCIONA EL SISTEMA
+
+### CONFIGURACIÓN INICIAL
+
+1. Asegúrate de que las tablas existen en la base de datos
+2. Incluye los scripts en el index.html:
+   ```html
+   <script src="https://unpkg.com/leaflet-polylinedecorator/dist/leaflet.polylineDecorator.js"></script>
+   <script src="js/emoji-vinculos.js"></script>

@@ -1,0 +1,5 @@
+Options -Indexes
+AddType image/gif .gif
+<FilesMatch "\.gif$">
+    Header set Cache-Control "max-age=86400"
+</FilesMatch>

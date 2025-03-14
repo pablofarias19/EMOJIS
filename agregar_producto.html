@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Publicar Anuncio</title>
+    <link rel="stylesheet" href="styles/agregar_producto.css">
+</head>
+<body>
+    <!-- Modal/Pop-up para mostrar detalles del producto -->
+    <div id="productoModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="ModalModule.cerrarModal()">&times;</span>
+            <h2 id="modal-titulo"></h2>
+            <p id="modal-precio"></p>
+            <p id="modal-descripcion"></p>
+            <p id="modal-ubicacion"></p>
+            <div id="modal-imagenes"></div>
+            <hr>
+            <div class="modal-actions">
+                <button onclick="ModalModule.contactarVendedor()">
+                    Contactar al interesado
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Formulario de publicación de anuncio -->
+    <form id="anuncioForm" method="post" action="guardar_producto.php" enctype="multipart/form-data">
+        
+        <!-- Tipo de anuncio: Oferta o Demanda -->
+        <div class="form-group">
+            <label>Tipo de anuncio:</label>
+            <div class="tipo-anuncio">
+                <button type="button" id="btn-oferta" class="active" onclick="FormModule.seleccionarTipo('oferta')">
+                    📢 OFERTA
+                </button>
+                <button type="button" id="btn-demanda" onclick="FormModule.seleccionarTipo('demanda')">
+                    🔍 DEMANDA
+                </button>
+            </div>
+            <!-- Campo oculto donde guardamos la opción seleccionada (oferta/demanda) -->
+            <input type="hidden" id="tipo_anuncio" name="tipo_anuncio" value="oferta">
+        </div>
+        
+        <!-- Categoría y subcategoría -->
+        <div class="form-row">
+            <div class="form-group">
+                <label for="categoria">Categoría:</label>
+                <select id="categoria" name="categoria" required onchange="CategoriasModule.actualizarSubcategorias()">
+                    <option value="">Seleccione una categoría</option>
+                    <option value="alimentos" data-emoji="🍎">🍎 Alimentos</option>
+                    <option value="ropa" data-emoji="👕">👕 Ropa</option>
+                    <option value="calzado" data-emoji="👟">👟 Calzado</option>
+                    <option value="juguetes" data-emoji="🧸">🧸 Juguetes</option>
+                    <option value="libros" data-emoji="📚">📚 Libros</option>
+                    <option value="electronica" data-emoji="📱">📱 Electrónica</option>
+                    <option value="hogar" data-emoji="🏠">🏠 Hogar y Decoración</option>
+                    <option value="servicios" data-emoji="🔧">🔧 Servicios</option>
+                    <option value="vehiculos" data-emoji="🚗">🚗 Vehículos</option>
+                    <option value="inmuebles" data-emoji="🏢">🏢 Inmuebles</option>
+                    <option value="trabajo" data-emoji="💼">💼 Trabajo</option>
+                    <option value="otros" data-emoji="🔄">🔄 Otros</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="subcategoria">Subcategoría:</label>
+                <select id="subcategoria" name="subcategoria" required>
+                    <option value="">Primero seleccione una categoría</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Título y precio -->
+        <div class="form-row">
+            <div class="form-group">
+                <label for="titulo">Título: 
+                    <span id="emoji-preview" class="emoji-preview"></span>
+                </label>
+                <input type="text" id="titulo" name="titulo" required 
+                       placeholder="Título breve y descriptivo">
+                <!-- Campo oculto donde guardamos el emoji de la categoría -->
+                <input type="hidden" id="emoji" name="emoji" value="">
+            </div>
+            
+            <div class="form-group">
+                <label for="precio">Precio ($):</label>
+                <input type="number" id="precio" name="precio" required 
+                       min="0" step="0.01" placeholder="0.00">
+            </div>
+        </div>
+        
+        <!-- Descripción breve -->
+        <div class="form-group">
+            <label for="descripcion_breve">Descripción breve:</label>
+            <textarea id="descripcion_breve" name="descripcion_breve" required 
+                      placeholder="Describa brevemente su anuncio (máx. 200 caracteres)" 
+                      maxlength="200"></textarea>
+        </div>
+        
+        <!-- Descripción detallada (para la tabla expandible) -->
+        <div class="form-group">
+            <label for="descripcion_detallada">Descripción detallada:</label>
+            <textarea id="descripcion_detallada" name="descripcion_detallada" 
+                      placeholder="Incluya todos los detalles importantes de su anuncio">
+            </textarea>
+        </div>
+        
+        <!-- Ubicación -->
+        <div class="form-group">
+            <label for="ubicacion">Dirección/Zona:</label>
+            <input type="text" id="ubicacion" name="ubicacion" 
+                   placeholder="Barrio, calle, referencia, etc.">
+        </div>
+        
+        <!-- Imágenes -->
+        <div class="form-group">
+            <label for="imagenes">Imágenes (opcional):</label>
+            <input type="file" id="imagenes" name="imagenes[]" 
+                   multiple accept="image/*">
+            <small>Puede seleccionar varias imágenes. Formatos aceptados: JPG, PNG, GIF</small>
+        </div>
+        
+        <!-- Información de contacto -->
+        <div class="form-group">
+            <label>Información de contacto:</label>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="telefono">Teléfono fijo (opcional):</label>
+                    <input type="tel" id="telefono" name="telefono" 
+                           placeholder="Ej. (01) 1234-5678">
+                </div>
+                
+                <div class="form-group">
+                    <label for="celular">Teléfono celular (opcional):</label>
+                    <input type="tel" id="celular" name="celular" 
+                           placeholder="Ej. (011) 15-1234-5678">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="email">Correo electrónico (opcional):</label>
+                <input type="email" id="email" name="email" 
+                       placeholder="ejemplo@correo.com">
+            </div>
+        </div>
+        
+        <!-- Campos ocultos para la geolocalización -->
+        <input type="hidden" id="latitud" name="latitud">
+        <input type="hidden" id="longitud" name="longitud">
+        
+        <div id="ubicacionStatus">Detectando su ubicación actual...</div>
+        
+        <!-- Botón enviar desactivado hasta que obtenga la geolocalización o se ingrese manual -->
+        <button type="submit" id="submitBtn" disabled>Publicar Anuncio</button>
+    </form>
+
+    <!-- Módulos JavaScript -->
+    <script src="js/modules/agregar_producto_utils.js"></script>
+    <script src="js/modules/agregar_producto_geo.js"></script>
+    <script src="js/modules/agregar_producto_categorias.js"></script>
+    <script src="js/modules/agregar_producto_forms.js"></script>
+    <script src="js/modules/agregar_producto_modal.js"></script>
+    <script src="js/agregar_producto.js"></script>
+</body>
+</html>

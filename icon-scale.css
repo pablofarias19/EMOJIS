@@ -1,0 +1,64 @@
+/* Control de tamaño de iconos según zoom */
+
+/* Estilos base para los iconos */
+.leaflet-div-icon {
+  background: transparent !important;
+  border: none !important;
+}
+
+/* Clase aplicada a los contenedores de iconos */
+.icono-escalable {
+  transform-origin: center center;
+  transition: transform 0.2s ease-out;
+}
+
+/* Emoji animado específicamente */
+.emoji-animado {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  transition: transform 0.2s ease-out, font-size 0.2s ease-out;
+}
+
+/* Estilos para zoom normal (nivel 13) - tamaño estándar */
+.zoom-level-13 .icono-escalable {
+  transform: scale(1);
+}
+
+/* A medida que se hace zoom out, reducir progresivamente */
+.zoom-level-12 .icono-escalable {
+  transform: scale(0.9);
+}
+
+.zoom-level-11 .icono-escalable {
+  transform: scale(0.8);
+}
+
+.zoom-level-10 .icono-escalable {
+  transform: scale(0.7);
+}
+
+.zoom-level-9 .icono-escalable {
+  transform: scale(0.6);
+}
+
+.zoom-level-8 .icono-escalable {
+  transform: scale(0.5);
+}
+
+.zoom-level-7 .icono-escalable,
+.zoom-level-6 .icono-escalable,
+.zoom-level-5 .icono-escalable {
+  transform: scale(0.4);
+}
+
+.zoom-level-4 .icono-escalable,
+.zoom-level-3 .icono-escalable {
+  transform: scale(0.3);
+}
+
+.zoom-level-2 .icono-escalable,
+.zoom-level-1 .icono-escalable {
+  transform: scale(0.2);
+}

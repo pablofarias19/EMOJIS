@@ -1,0 +1,33 @@
+2025-03-14 19:23:38 - Recibido: Array
+(
+    [grupo_id] => 6
+    [emoji_origen_id] => 11
+    [emoji_destino_id] => 9
+    [orden] => 0
+    [etiqueta] => 
+    [bidirectional] => 0
+)
+
+2025-03-14 19:23:38 - Actualización de relación existente: 6-11-9
+2025-03-14 19:24:48 - Recibido: Array
+(
+    [grupo_id] => 6
+    [emoji_origen_id] => 3
+    [emoji_destino_id] => 8
+    [orden] => 0
+    [etiqueta] => 
+    [bidirectional] => 0
+)
+
+2025-03-14 19:24:48 - Nueva relación insertada: 6-3-8
+2025-03-14 19:31:05 - Recibido: Array
+(
+    [grupo_id] => 5
+    [emoji_origen_id] => 10
+    [emoji_destino_id] => 3
+    [orden] => 1
+    [etiqueta] => 
+    [bidirectional] => 0
+)
+
+2025-03-14 19:31:05 - Nueva relación insertada con ID: 16

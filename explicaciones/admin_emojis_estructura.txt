@@ -1,0 +1,128 @@
+# ESTRUCTURA DEL PROYECTO "ADMINISTRACIÓN DE EMOJIS"
+Fecha de creación: 2025-03-13 15:14:01
+Autor: pablofarias19
+
+## DESCRIPCIÓN GENERAL
+Este proyecto gestiona emojis para un mapa interactivo, permitiendo la creación, edición y eliminación de emojis, así como la agrupación y vinculación entre ellos mediante relaciones. El proyecto ha sido refactorizado de un único archivo a una estructura modular para mejorar la mantenibilidad y organización del código.
+
+## ESTRUCTURA DE ARCHIVOS
+
+1. admin_emojis.html
+   - Archivo principal que contiene la estructura HTML de la aplicación
+   - Incluye las referencias a los archivos CSS y JavaScript
+   - Contiene los tres componentes principales: emojis, grupos y relaciones
+
+2. styles/admin_emojis.css
+   - Contiene todos los estilos de la aplicación organizados por secciones:
+     * Estilos del mapa
+     * Estilos para emojis
+     * Estilos para alertas y mensajes
+     * Estilos para las pestañas
+     * Estilos para grupos
+     * Estilos para relaciones
+
+3. js/admin_emojis.js
+   - Archivo principal JavaScript que inicializa todos los módulos
+   - Configura los gestores de eventos principales
+   - Establece la comunicación entre los diferentes módulos
+   - Expone las funciones necesarias al ámbito global para permitir su acceso desde el HTML
+
+4. js/modules/admin_emojis_utils.js
+   - Módulo de utilidades generales reutilizables
+   - Funciones para mostrar mensajes al usuario
+   - Funciones auxiliares para trabajar con arrays y objetos
+   - No tiene dependencias de otros módulos
+
+5. js/modules/admin_emojis_map.js
+   - Gestiona toda la funcionalidad relacionada con el mapa Leaflet
+   - Inicializa y configura el mapa
+   - Gestiona los marcadores y la interacción con el mapa
+   - Proporciona métodos para establecer y actualizar posiciones en el mapa
+
+6. js/modules/admin_emojis_emoji.js
+   - Gestiona la creación, edición y eliminación de emojis
+   - Comunica con el servidor para almacenar y recuperar datos de emojis
+   - Actualiza la interfaz con la lista de emojis
+   - Depende de los módulos utils y map
+
+7. js/modules/admin_emojis_groups.js
+   - Gestiona los grupos de vinculación
+   - Permite crear, editar y eliminar grupos
+   - Muestra la lista de grupos disponibles
+   - Depende del módulo utils
+
+8. js/modules/admin_emojis_relations.js
+   - Gestiona las relaciones entre emojis
+   - Permite crear y eliminar vinculaciones
+   - Muestra visualmente las relaciones existentes por grupos
+   - Depende de los módulos emoji, groups y utils
+
+## FUNCIONALIDAD POR MÓDULO
+
+1. MÓDULO DE MAPA (admin_emojis_map.js)
+   - Inicialización del mapa Leaflet
+   - Manejo de eventos de clic para seleccionar posiciones
+   - Gestión de marcadores (inicio y fin)
+   - Actualización de coordenadas en los campos del formulario
+
+2. MÓDULO DE EMOJIS (admin_emojis_emoji.js)
+   - Carga y renderiza la tabla de emojis
+   - Gestiona el formulario de creación/edición
+   - Envía peticiones al servidor para guardar y eliminar
+   - Validación de datos del formulario
+
+3. MÓDULO DE GRUPOS (admin_emojis_groups.js)
+   - Carga y renderiza la lista de grupos
+   - Actualiza los selectores de grupos en toda la aplicación
+   - Gestiona el formulario de creación/edición
+   - Envía peticiones al servidor para guardar y eliminar
+
+4. MÓDULO DE RELACIONES (admin_emojis_relations.js)
+   - Carga y renderiza las relaciones agrupadas
+   - Gestiona la selección de emojis para vincular
+   - Permite relaciones bidireccionales
+   - Envía peticiones al servidor para guardar y eliminar
+
+5. MÓDULO DE UTILIDADES (admin_emojis_utils.js)
+   - Muestra mensajes temporales al usuario
+   - Proporciona funciones para buscar objetos por ID
+   - Funciones auxiliares para contar elementos
+
+## FLUJO DE DATOS
+
+1. El usuario interactúa con la interfaz (formularios, botones, mapa)
+2. Los eventos son capturados por los controladores en los módulos correspondientes
+3. Se actualizan los datos en la interfaz y/o se envían peticiones al servidor
+4. Las respuestas del servidor se procesan para actualizar el estado de la aplicación
+5. Se reflejan los cambios en la interfaz de usuario
+
+## ENDPOINTS API (PHP)
+
+1. get_iconos.php - Obtiene todos los emojis
+2. guardar_icono.php - Crea o actualiza un emoji
+3. eliminar_icono.php - Elimina un emoji
+4. get_grupos_emoji.php - Obtiene todos los grupos
+5. guardar_grupo_emoji.php - Crea o actualiza un grupo
+6. eliminar_grupo_emoji.php - Elimina un grupo
+7. get_relaciones_emoji.php - Obtiene todas las relaciones
+8. guardar_relacion_emoji.php - Crea o actualiza una relación
+9. eliminar_relacion_emoji.php - Elimina una relación
+
+## ESTADO COMPARTIDO
+
+La aplicación mantiene un estado global compartido entre todos los módulos que incluye:
+1. emojisList - Lista de todos los emojis cargados
+2. groupsList - Lista de todos los grupos cargados
+3. relationsList - Lista de todas las relaciones cargadas
+
+Este estado se inicializa en admin_emojis.js y se pasa a cada módulo durante la inicialización.
+
+## MEJORAS Y MANTENIMIENTO
+
+Esta refactorización modular permite:
+1. Localizar fácilmente las funcionalidades por área de responsabilidad
+2. Modificar un módulo sin afectar a los demás
+3. Reutilizar componentes en otros proyectos
+4. Facilitar futuras ampliaciones de funcionalidad
+5. Mejorar el rendimiento al cargar solo el código necesario
+6. Facilitar pruebas unitarias por módulo

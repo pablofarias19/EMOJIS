@@ -1,0 +1,1320 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Administración de Emojis</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+  <style>
+    #map { 
+      height: 400px; 
+      width: 100%; 
+      margin-top: 15px;
+      border-radius: 8px;
+    }
+    .emoji-preview {
+      font-size: 28px;
+      margin-bottom: 10px;
+    }
+    .alert-hidden {
+      display: none;
+    }
+    .tabs-container {
+      margin-bottom: 20px;
+    }
+    .emoji-large {
+      font-size: 24px;
+    }
+    .emoji-badge {
+      display: inline-block;
+      margin-right: 5px;
+      font-size: 18px;
+      padding: 3px 8px;
+      border-radius: 50%;
+      background-color: #f8f9fa;
+    }
+    .group-item {
+      border-left: 5px solid #4285F4;
+      margin-bottom: 10px;
+      padding: 10px 15px;
+      border-radius: 4px;
+      background-color: #f8f9fa;
+    }
+    .relationship-card {
+      background-color: #f8f9fa;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 15px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .connection-arrow {
+      font-size: 20px;
+      margin: 0 10px;
+      color: #666;
+    }
+    .connection-info {
+      background: #e9ecef;
+      border-radius: 4px;
+      padding: 8px;
+      margin: 8px 0;
+    }
+    .nav-tabs .nav-link {
+      font-weight: 500;
+    }
+    .nav-tabs .nav-link.active {
+      border-bottom: 3px solid #0d6efd;
+    }
+    .badge-group {
+      background-color: #e7f3ff;
+      color: #0d6efd;
+      font-weight: normal;
+      padding: 3px 8px;
+      font-size: 0.85em;
+      border-radius: 10px;
+    }
+    .emoji-select-card {
+      cursor: pointer;
+      padding: 8px;
+      margin: 5px;
+      border-radius: 4px;
+      transition: background-color 0.2s;
+    }
+    .emoji-select-card:hover {
+      background-color: #e9ecef;
+    }
+    .emoji-select-card.selected {
+      background-color: #cfe2ff;
+      border: 1px solid #0d6efd;
+    }
+  </style>
+</head>
+<body>
+  <div class="container mt-4 mb-5">
+    <h1 class="mb-3">Administración de Emojis para el Mapa</h1>
+    
+    <!-- Mensajes de alerta -->
+    <div id="message-container" class="alert alert-hidden"></div>
+    
+    <!-- Pestañas de navegación -->
+    <ul class="nav nav-tabs tabs-container" id="adminTabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="emojis-tab" data-bs-toggle="tab" data-bs-target="#emojis-tab-pane" type="button" role="tab">
+          <i class="bi bi-emoji-smile"></i> Emojis
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="groups-tab" data-bs-toggle="tab" data-bs-target="#groups-tab-pane" type="button" role="tab">
+          <i class="bi bi-collection"></i> Grupos de Vinculación
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="relations-tab" data-bs-toggle="tab" data-bs-target="#relations-tab-pane" type="button" role="tab">
+          <i class="bi bi-diagram-3"></i> Relaciones entre Emojis
+        </button>
+      </li>
+    </ul>
+    
+    <!-- Contenido de las pestañas -->
+    <div class="tab-content" id="adminTabContent">
+      <!-- TAB 1: EMOJIS -->
+      <div class="tab-pane fade show active" id="emojis-tab-pane" role="tabpanel" aria-labelledby="emojis-tab" tabindex="0">
+        <div class="card mb-4">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Listado de Emojis</h5>
+            <button id="new-emoji-btn" class="btn btn-primary">Agregar Nuevo</button>
+          </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Emoji</th>
+                    <th>Título</th>
+                    <th>Coordenadas Inicio</th>
+                    <th>Coordenadas Fin</th>
+                    <th>Velocidad</th>
+                    <th>Vinculaciones</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="emojis-table">
+                  <tr>
+                    <td colspan="9" class="text-center">Cargando emojis...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Formulario para agregar/editar emoji -->
+        <div class="card" id="form-card" style="display:none;">
+          <div class="card-header">
+            <h5 id="form-title">Agregar Emoji</h5>
+          </div>
+          <div class="card-body">
+            <form id="emoji-form">
+              <input type="hidden" id="emoji-id">
+              
+              <div class="row">
+                <div class="col-md-6">
+                  <!-- Emoji y título -->
+                  <div class="mb-3">
+                    <label for="emoji-symbol" class="form-label">Emoji:</label>
+                    <input type="text" class="form-control" id="emoji-symbol" placeholder="Ingrese un emoji (ejemplo: 🚀)">
+                    <div class="emoji-preview mt-2" id="emoji-preview">📍</div>
+                  </div>
+                  
+                  <div class="mb-3">
+                    <label for="emoji-title" class="form-label">Título:</label>
+                    <input type="text" class="form-control" id="emoji-title" placeholder="Título (opcional)">
+                  </div>
+                  
+                  <!-- Opciones adicionales -->
+                  <div class="mb-3">
+                    <label for="emoji-speed" class="form-label">Velocidad:</label>
+                    <select class="form-select" id="emoji-speed">
+                      <option value="0.0001">Muy lenta</option>
+                      <option value="0.0002">Lenta</option>
+                      <option value="0.0003" selected>Normal</option>
+                      <option value="0.0005">Rápida</option>
+                      <option value="0.001">Muy rápida</option>
+                    </select>
+                  </div>
+                  
+                  <div class="mb-3">
+                    <label for="emoji-popup" class="form-label">Mostrar información:</label>
+                    <select class="form-select" id="emoji-popup">
+                      <option value="0" selected>No mostrar</option>
+                      <option value="1">Mostrar popup con información</option>
+                    </select>
+                  </div>
+                  
+                  <div class="mb-3">
+                    <label for="emoji-description" class="form-label">Descripción:</label>
+                    <textarea class="form-control" id="emoji-description" rows="3" placeholder="Descripción para el popup (opcional)"></textarea>
+                  </div>
+                  
+                  <div class="mb-3">
+                    <label for="emoji-active" class="form-label">Estado:</label>
+                    <select class="form-select" id="emoji-active">
+                      <option value="1" selected>Activo</option>
+                      <option value="0">Inactivo</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <div class="col-md-6">
+                  <!-- Coordenadas y mapa -->
+                  <div class="mb-3">
+                    <label class="form-label">Posición inicial:</label>
+                    <div class="input-group mb-2">
+                      <span class="input-group-text">Lat:</span>
+                      <input type="text" class="form-control" id="emoji-start-lat" placeholder="Latitud inicial">
+                      <span class="input-group-text">Lng:</span>
+                      <input type="text" class="form-control" id="emoji-start-lng" placeholder="Longitud inicial">
+                    </div>
+                  </div>
+                  
+                  <div class="mb-3">
+                    <label class="form-label">Posición final:</label>
+                    <div class="input-group mb-2">
+                      <span class="input-group-text">Lat:</span>
+                      <input type="text" class="form-control" id="emoji-end-lat" placeholder="Latitud final">
+                      <span class="input-group-text">Lng:</span>
+                      <input type="text" class="form-control" id="emoji-end-lng" placeholder="Longitud final">
+                    </div>
+                  </div>
+                  
+                  <p class="text-muted mb-2">Haga clic en el mapa para establecer la posición inicial. Clic nuevamente para la posición final.</p>
+                  <div id="map"></div>
+                </div>
+              </div>
+              
+              <div class="mt-4 d-flex justify-content-end">
+                <button type="button" id="cancel-btn" class="btn btn-secondary me-2">Cancelar</button>
+                <button type="submit" class="btn btn-success">Guardar</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+      
+      <!-- TAB 2: GRUPOS DE VINCULACIÓN -->
+      <div class="tab-pane fade" id="groups-tab-pane" role="tabpanel" aria-labelledby="groups-tab" tabindex="0">
+        <div class="row mt-3">
+          <div class="col-md-4">
+            <div class="card">
+              <div class="card-header">
+                <h5 id="group-form-title">Crear Nuevo Grupo</h5>
+              </div>
+              <div class="card-body">
+                <form id="group-form">
+                  <input type="hidden" id="group-id" value="">
+                  
+                  <div class="mb-3">
+                    <label for="group-name" class="form-label">Nombre del grupo:</label>
+                    <input type="text" class="form-control" id="group-name" required placeholder="Ej: Casas en venta">
+                  </div>
+                  
+                  <div class="mb-3">
+                    <label for="group-criteria" class="form-label">Criterio de agrupación:</label>
+                    <input type="text" class="form-control" id="group-criteria" required placeholder="Ej: tipo, color, autor">
+                  </div>
+                  
+                  <div class="mb-3">
+                    <label for="group-description" class="form-label">Descripción:</label>
+                    <textarea class="form-control" id="group-description" rows="3" placeholder="Descripción opcional del grupo"></textarea>
+                  </div>
+                  
+                  <div class="mb-3">
+                    <label for="group-color" class="form-label">Color:</label>
+                    <input type="color" class="form-control form-control-color" id="group-color" value="#4285F4" title="Elija un color para el grupo">
+                  </div>
+                  
+                  <div class="d-flex justify-content-end">
+                    <button type="button" id="group-reset-btn" class="btn btn-secondary me-2">Limpiar</button>
+                    <button type="submit" class="btn btn-success">Guardar Grupo</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+          
+          <div class="col-md-8">
+            <div class="card">
+              <div class="card-header">
+                <h5>Grupos de Vinculación</h5>
+              </div>
+              <div class="card-body">
+                <div id="groups-container">
+                  <p class="text-center text-muted">Cargando grupos...</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- TAB 3: RELACIONES ENTRE EMOJIS -->
+      <div class="tab-pane fade" id="relations-tab-pane" role="tabpanel" aria-labelledby="relations-tab" tabindex="0">
+        <div class="row mt-3">
+          <div class="col-md-5">
+            <div class="card">
+              <div class="card-header">
+                <h5>Crear Nueva Vinculación</h5>
+              </div>
+              <div class="card-body">
+                <form id="relation-form">
+                  <input type="hidden" id="relation-id" value="">
+                  
+                  <div class="mb-3">
+                    <label for="relation-group" class="form-label">Grupo de vinculación:</label>
+                    <select class="form-select" id="relation-group" required>
+                      <option value="">Seleccione un grupo...</option>
+                    </select>
+                  </div>
+                  
+                  <div class="mb-3">
+                    <label class="form-label">Emoji origen:</label>
+                    <div id="emoji-origin-selector" class="border rounded p-2 d-flex flex-wrap" style="max-height: 150px; overflow-y: auto;">
+                      <p class="text-center text-muted w-100">Seleccione un grupo primero</p>
+                    </div>
+                    <input type="hidden" id="emoji-origin-id">
+                  </div>
+                  
+                  <div class="mb-3">
+                    <label class="form-label">Emoji destino:</label>
+                    <div id="emoji-destination-selector" class="border rounded p-2 d-flex flex-wrap" style="max-height: 150px; overflow-y: auto;">
+                      <p class="text-center text-muted w-100">Seleccione un origen primero</p>
+                    </div>
+                    <input type="hidden" id="emoji-destination-id">
+                  </div>
+                  
+                  <div class="mb-3">
+                    <label for="relation-order" class="form-label">Orden de visualización:</label>
+                    <input type="number" class="form-control" id="relation-order" min="0" value="0" placeholder="Orden para listar la relación">
+                    <small class="text-muted">Número para ordenar las vinculaciones (0 = primero)</small>
+                  </div>
+                  
+                  <div class="mb-3">
+                    <label for="relation-label" class="form-label">Etiqueta de la conexión:</label>
+                    <input type="text" class="form-control" id="relation-label" placeholder="Ej: Ruta de acceso, Ver siguiente">
+                    <small class="text-muted">Texto que aparecerá sobre la flecha de conexión</small>
+                  </div>
+                  
+                  <div class="mb-3">
+                    <div class="form-check">
+                      <input class="form-check-input" type="checkbox" id="bidirectional-relation">
+                      <label class="form-check-label" for="bidirectional-relation">
+                        Crear relación bidireccional (ida y vuelta)
+                      </label>
+                    </div>
+                  </div>
+                  
+                  <div class="d-flex justify-content-end">
+                    <button type="button" id="relation-reset-btn" class="btn btn-secondary me-2">Limpiar</button>
+                    <button type="submit" class="btn btn-success">Guardar Relación</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+          
+          <div class="col-md-7">
+            <div class="card">
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <h5>Relaciones Existentes</h5>
+                <div class="form-group m-0">
+                  <select class="form-select form-select-sm" id="filter-relations-group">
+                    <option value="0">Ver todos los grupos</option>
+                  </select>
+                </div>
+              </div>
+              <div class="card-body">
+                <div id="relations-container">
+                  <p class="text-center text-muted">Seleccione un grupo para ver sus relaciones</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Variables globales
+      let map = null;
+      let currentMarker = null;
+      let endMarker = null;
+      let emojisList = [];
+      let groupsList = [];
+      let relationsList = [];
+      let clickMode = 'start'; // 'start' o 'end'
+      
+      // Inicializar mapa
+      function initMap() {
+        map = L.map('map').setView([-31.244, -64.464], 14);
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+        
+        // Evento click en el mapa
+        map.on('click', function(e) {
+          const lat = e.latlng.lat;
+          const lng = e.latlng.lng;
+          
+          if (clickMode === 'start') {
+            setStartPosition(lat, lng);
+            clickMode = 'end';
+          } else {
+            setEndPosition(lat, lng);
+            clickMode = 'start';
+          }
+        });
+        
+        // Actualizar vista previa de emoji al cambiar
+        document.getElementById('emoji-symbol').addEventListener('input', function() {
+          const emoji = this.value || '📍';
+          document.getElementById('emoji-preview').textContent = emoji;
+          
+          if (currentMarker) {
+            currentMarker.setIcon(L.divIcon({
+              html: `<div style="font-size:30px;">${emoji}</div>`,
+              className: '',
+              iconSize: [30, 30]
+            }));
+          }
+        });
+        
+        // Actualizar marcadores si se cambian manualmente las coordenadas
+        document.getElementById('emoji-start-lat').addEventListener('change', updateMapMarkers);
+        document.getElementById('emoji-start-lng').addEventListener('change', updateMapMarkers);
+        document.getElementById('emoji-end-lat').addEventListener('change', updateMapMarkers);
+        document.getElementById('emoji-end-lng').addEventListener('change', updateMapMarkers);
+      }
+      
+      // ----------------------------------------------------
+      // SECCIÓN 1: GESTIÓN DE EMOJIS
+      // ----------------------------------------------------
+      
+      // Cargar lista de emojis desde el servidor
+      function loadEmojis() {
+        fetch('get_iconos.php')
+          .then(response => {
+            if (!response.ok) {
+              throw new Error('Error al cargar emojis');
+            }
+            return response.json();
+          })
+          .then(data => {
+            // Guardar lista de emojis para edición posterior
+            emojisList = data;
+            
+            // Actualizar tabla
+            renderEmojisTable(data);
+            
+            // Actualizar selectores de emojis en relaciones
+            updateEmojiSelectors();
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            showMessage('No se pudo cargar la lista de emojis', 'danger');
+          });
+      }
+      
+      // Renderizar tabla de emojis
+      function renderEmojisTable(emojis) {
+        const tbody = document.getElementById('emojis-table');
+        tbody.innerHTML = '';
+        
+        if (emojis.length === 0) {
+          const row = document.createElement('tr');
+          row.innerHTML = '<td colspan="9" class="text-center">No hay emojis registrados</td>';
+          tbody.appendChild(row);
+          return;
+        }
+        
+        emojis.forEach(emoji => {
+          // Obtener vinculaciones para este emoji
+          const vinculaciones = getRelationshipsForEmoji(emoji.id);
+          let vinculacionesHTML = '';
+          
+          if (vinculaciones.length > 0) {
+            vinculacionesHTML = `<span class="badge text-bg-info">${vinculaciones.length} conexiones</span>`;
+          } else {
+            vinculacionesHTML = '<small class="text-muted">Sin vinculaciones</small>';
+          }
+          
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${emoji.id}</td>
+            <td><span style="font-size:24px;">${emoji.emoji}</span></td>
+            <td>${emoji.titulo || '-'}</td>
+            <td>${emoji.lat_inicial}, ${emoji.lng_inicial}</td>
+            <td>${emoji.lat_final}, ${emoji.lng_final}</td>
+            <td>${emoji.velocidad}</td>
+            <td>${vinculacionesHTML}</td>
+            <td>${emoji.activo === '1' || emoji.activo === 1 ? '<span style="color:green">✓ Activo</span>' : '<span style="color:red">✗ Inactivo</span>'}</td>
+            <td>
+              <button class="btn btn-primary btn-sm" onclick="editEmoji(${emoji.id})">Editar</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteEmoji(${emoji.id})">Eliminar</button>
+            </td>
+          `;
+          
+          tbody.appendChild(row);
+        });
+      }
+      
+      function showForm() {
+        clearForm();
+        document.getElementById('form-title').textContent = 'Agregar Emoji';
+        document.getElementById('form-card').style.display = 'block';
+        document.getElementById('emoji-id').value = '';
+        
+        // Hacer scroll al formulario
+        document.getElementById('form-card').scrollIntoView({ behavior: 'smooth' });
+      }
+      
+      function hideForm() {
+        document.getElementById('form-card').style.display = 'none';
+        clearForm();
+      }
+      
+      function clearForm() {
+        document.getElementById('emoji-form').reset();
+        
+        // Eliminar marcadores del mapa
+        if (currentMarker) {
+          map.removeLayer(currentMarker);
+          currentMarker = null;
+        }
+        
+        if (endMarker) {
+          map.removeLayer(endMarker);
+          endMarker = null;
+        }
+        
+        // Restablecer modo de clic
+        clickMode = 'start';
+      }
+      
+      function updateMapMarkers() {
+        const startLat = parseFloat(document.getElementById('emoji-start-lat').value);
+        const startLng = parseFloat(document.getElementById('emoji-start-lng').value);
+        const endLat = parseFloat(document.getElementById('emoji-end-lat').value);
+        const endLng = parseFloat(document.getElementById('emoji-end-lng').value);
+        
+        // Actualizar marcador de inicio si hay datos válidos
+        if (!isNaN(startLat) && !isNaN(startLng)) {
+          setStartPosition(startLat, startLng);
+        }
+        
+        // Actualizar marcador de fin si hay datos válidos
+        if (!isNaN(endLat) && !isNaN(endLng)) {
+          setEndPosition(endLat, endLng);
+        }
+      }
+      
+      function setStartPosition(lat, lng) {
+        // Actualizar campos del formulario
+        document.getElementById('emoji-start-lat').value = lat.toFixed(6);
+        document.getElementById('emoji-start-lng').value = lng.toFixed(6);
+        
+        // Actualizar o crear marcador
+        const emoji = document.getElementById('emoji-symbol').value || '📍';
+        
+        if (currentMarker) {
+          currentMarker.setLatLng([lat, lng]);
+        } else {
+          currentMarker = L.marker([lat, lng], {
+            icon: L.divIcon({
+              html: `<div style="font-size:30px;">${emoji}</div>`,
+              className: '',
+              iconSize: [30, 30]
+            })
+          }).addTo(map);
+        }
+        
+        // Centrar mapa en la nueva posición
+        map.setView([lat, lng], 14);
+      }
+      
+      function setEndPosition(lat, lng) {
+        // Actualizar campos del formulario
+        document.getElementById('emoji-end-lat').value = lat.toFixed(6);
+        document.getElementById('emoji-end-lng').value = lng.toFixed(6);
+        
+        // Actualizar o crear marcador
+        if (endMarker) {
+          endMarker.setLatLng([lat, lng]);
+        } else {
+          endMarker = L.marker([lat, lng], {
+            icon: L.divIcon({
+              html: `<div style="font-size:16px;">🏁</div>`,
+              className: '',
+              iconSize: [30, 30]
+            })
+          }).addTo(map);
+        }
+        
+        // Ajustar la vista para mostrar ambos marcadores
+        if (currentMarker) {
+          const bounds = L.latLngBounds(
+            currentMarker.getLatLng(),
+            endMarker.getLatLng()
+          );
+          map.fitBounds(bounds, {padding: [50, 50]});
+        }
+      }
+      
+      // Función para guardar emoji
+      function saveEmoji(e) {
+        e.preventDefault();
+        
+        // Validar formulario
+        const startLat = document.getElementById('emoji-start-lat').value;
+        const startLng = document.getElementById('emoji-start-lng').value;
+        const endLat = document.getElementById('emoji-end-lat').value;
+        const endLng = document.getElementById('emoji-end-lng').value;
+        
+        if (!startLat || !startLng) {
+          showMessage('Por favor, seleccione la posición inicial del emoji en el mapa', 'danger');
+          return;
+        }
+        
+        if (!endLat || !endLng) {
+          showMessage('Por favor, seleccione la posición final del emoji en el mapa', 'danger');
+          return;
+        }
+        
+        // Mostrar mensaje de carga
+        showMessage('Guardando emoji...', 'info');
+        
+        // Crear FormData para enviar al servidor
+        const formData = new FormData();
+        formData.append('id', document.getElementById('emoji-id').value);
+        formData.append('emoji', document.getElementById('emoji-symbol').value || '📍');
+        formData.append('titulo', document.getElementById('emoji-title').value);
+        formData.append('lat_inicial', startLat);
+        formData.append('lng_inicial', startLng);
+        formData.append('lat_final', endLat);
+        formData.append('lng_final', endLng);
+        formData.append('velocidad', document.getElementById('emoji-speed').value);
+        formData.append('mostrar_popup', document.getElementById('emoji-popup').value);
+        formData.append('descripcion', document.getElementById('emoji-description').value);
+        formData.append('activo', document.getElementById('emoji-active').value);
+        
+        // Enviar datos al servidor
+        fetch('guardar_icono.php', {
+          method: 'POST',
+          body: formData
+        })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Error al guardar el emoji: ' + response.status);
+          }
+                   return response.json();
+        })
+        .then(data => {
+          if (data.success) {
+            showMessage('Emoji guardado correctamente', 'success');
+            hideForm();
+            loadEmojis();
+          } else {
+            showMessage('Error al guardar: ' + (data.error || 'Verifique los datos e intente nuevamente'), 'danger');
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          showMessage('Error al guardar el emoji. Por favor, intente nuevamente.', 'danger');
+        });
+      }
+      
+      // ----------------------------------------------------
+      // SECCIÓN 2: GESTIÓN DE GRUPOS
+      // ----------------------------------------------------
+      
+      // Cargar grupos desde el servidor
+      function loadGroups() {
+        fetch('get_grupos_emoji.php')
+          .then(response => {
+            if (!response.ok) {
+              throw new Error('Error al cargar grupos');
+            }
+            return response.json();
+          })
+          .then(data => {
+            if (data.success) {
+              groupsList = data.grupos || [];
+              renderGroupsList();
+              updateGroupsSelectors();
+            } else {
+              showMessage('Error al cargar grupos: ' + data.error, 'danger');
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            showMessage('No se pudieron cargar los grupos de emojis', 'danger');
+          });
+      }
+      
+      // Renderizar lista de grupos
+      function renderGroupsList() {
+        const container = document.getElementById('groups-container');
+        container.innerHTML = '';
+        
+        if (groupsList.length === 0) {
+          container.innerHTML = '<p class="text-center text-muted">No hay grupos creados. Cree un nuevo grupo usando el formulario.</p>';
+          return;
+        }
+        
+        groupsList.forEach(group => {
+          // Contar relaciones para este grupo
+          const relCount = countRelationsByGroup(group.id);
+          
+          const groupElement = document.createElement('div');
+          groupElement.className = 'group-item';
+          groupElement.style.borderLeftColor = group.color || '#4285F4';
+          
+          groupElement.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center">
+              <h5 class="mb-1">${group.nombre}</h5>
+              <div>
+                <button class="btn btn-sm btn-outline-primary me-1" onclick="editGroup(${group.id})">
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger" onclick="deleteGroup(${group.id})">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            </div>
+            <p class="mb-1"><strong>Criterio:</strong> ${group.criterio}</p>
+            <p class="mb-1">${group.descripcion || 'Sin descripción'}</p>
+            <div class="d-flex justify-content-between align-items-center mt-2">
+              <span class="badge badge-group">
+                <i class="bi bi-diagram-3"></i> ${relCount} vinculaciones
+              </span>
+              <small class="text-muted">ID: ${group.id}</small>
+            </div>
+          `;
+          
+          container.appendChild(groupElement);
+        });
+      }
+      
+      // Actualizar selectores de grupos
+      function updateGroupsSelectors() {
+        const relationGroupSelect = document.getElementById('relation-group');
+        const filterRelationsSelect = document.getElementById('filter-relations-group');
+        
+        // Limpiar opciones actuales
+        relationGroupSelect.innerHTML = '<option value="">Seleccione un grupo...</option>';
+        filterRelationsSelect.innerHTML = '<option value="0">Ver todos los grupos</option>';
+        
+        // Añadir grupos a los selectores
+        groupsList.forEach(group => {
+          const option1 = document.createElement('option');
+          option1.value = group.id;
+          option1.textContent = group.nombre + ' (' + group.criterio + ')';
+          relationGroupSelect.appendChild(option1);
+          
+          const option2 = document.createElement('option');
+          option2.value = group.id;
+          option2.textContent = group.nombre;
+          filterRelationsSelect.appendChild(option2);
+        });
+      }
+      
+      // Guardar un grupo
+      function saveGroup(e) {
+        e.preventDefault();
+        
+        const id = document.getElementById('group-id').value;
+        const name = document.getElementById('group-name').value;
+        const criteria = document.getElementById('group-criteria').value;
+        const description = document.getElementById('group-description').value;
+        const color = document.getElementById('group-color').value;
+        
+        if (!name || !criteria) {
+          showMessage('Nombre y criterio son obligatorios', 'danger');
+          return;
+        }
+        
+        // Crear FormData para enviar al servidor
+        const formData = new FormData();
+        formData.append('id', id);
+        formData.append('nombre', name);
+        formData.append('criterio', criteria);
+        formData.append('descripcion', description);
+        formData.append('color', color);
+        
+        fetch('guardar_grupo_emoji.php', {
+          method: 'POST',
+          body: formData
+        })
+        .then(response => {
+          if (!response.ok) throw new Error('Error en la respuesta del servidor');
+          return response.json();
+        })
+        .then(data => {
+          if (data.success) {
+            showMessage('Grupo guardado correctamente', 'success');
+            resetGroupForm();
+            loadGroups();
+          } else {
+            showMessage('Error al guardar el grupo: ' + (data.error || 'Intentelo de nuevo'), 'danger');
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          showMessage('Error al guardar el grupo', 'danger');
+        });
+      }
+      
+      // Editar grupo
+      function editGroup(id) {
+        const group = groupsList.find(g => g.id == id);
+        if (!group) return;
+        
+        document.getElementById('group-id').value = group.id;
+        document.getElementById('group-name').value = group.nombre;
+        document.getElementById('group-criteria').value = group.criterio;
+        document.getElementById('group-description').value = group.descripcion || '';
+        document.getElementById('group-color').value = group.color || '#4285F4';
+        
+        document.getElementById('group-form-title').textContent = 'Editar Grupo';
+        
+        // Cambiar al tab de grupos si no estamos en él
+        document.getElementById('groups-tab').click();
+      }
+      
+      // Eliminar grupo
+      function deleteGroup(id) {
+        if (!confirm('¿Está seguro de que desea eliminar este grupo? Se eliminarán todas las vinculaciones asociadas.')) {
+          return;
+        }
+        
+        fetch(`eliminar_grupo_emoji.php?id=${id}`)
+          .then(response => {
+            if (!response.ok) throw new Error('Error al eliminar');
+            return response.json();
+          })
+          .then(data => {
+            if (data.success) {
+              showMessage('Grupo eliminado correctamente', 'success');
+              loadGroups();
+              loadRelations();
+            } else {
+              showMessage('Error al eliminar: ' + (data.error || 'Intentelo de nuevo'), 'danger');
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            showMessage('Error al eliminar el grupo', 'danger');
+          });
+      }
+      
+      // Resetear formulario de grupo
+      function resetGroupForm() {
+        document.getElementById('group-form').reset();
+        document.getElementById('group-id').value = '';
+        document.getElementById('group-form-title').textContent = 'Crear Nuevo Grupo';
+      }
+      
+      // ----------------------------------------------------
+      // SECCIÓN 3: GESTIÓN DE RELACIONES
+      // ----------------------------------------------------
+      
+      // Cargar relaciones desde el servidor
+      function loadRelations() {
+        fetch('get_relaciones_emoji.php')
+          .then(response => {
+            if (!response.ok) throw new Error('Error al cargar relaciones');
+            return response.json();
+          })
+          .then(data => {
+            if (data.success) {
+              relationsList = data.relaciones || [];
+              filterAndRenderRelations();
+            } else {
+              showMessage('Error al cargar relaciones: ' + data.error, 'danger');
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            showMessage('No se pudieron cargar las relaciones', 'danger');
+          });
+      }
+      
+      // Filtrar y mostrar relaciones
+      function filterAndRenderRelations() {
+        const groupFilter = parseInt(document.getElementById('filter-relations-group').value);
+        let filteredRelations = relationsList;
+        
+        if (groupFilter > 0) {
+          filteredRelations = relationsList.filter(rel => rel.grupo_id == groupFilter);
+        }
+        
+        renderRelationsList(filteredRelations);
+      }
+      
+      // Renderizar lista de relaciones
+      function renderRelationsList(relations) {
+        const container = document.getElementById('relations-container');
+        container.innerHTML = '';
+        
+        if (relations.length === 0) {
+          container.innerHTML = '<p class="text-center text-muted">No hay relaciones para mostrar.</p>';
+          return;
+        }
+        
+        // Agrupar por grupo
+        const relationsByGroup = {};
+        
+        relations.forEach(relation => {
+          if (!relationsByGroup[relation.grupo_id]) {
+            relationsByGroup[relation.grupo_id] = {
+              info: getGroupById(relation.grupo_id),
+              items: []
+            };
+          }
+          
+          relationsByGroup[relation.grupo_id].items.push(relation);
+        });
+        
+        // Renderizar por grupos
+        Object.values(relationsByGroup).forEach(group => {
+          const groupDiv = document.createElement('div');
+          groupDiv.className = 'mb-4';
+          
+          // Encabezado del grupo
+          const headerDiv = document.createElement('div');
+          headerDiv.className = 'alert alert-info mb-3';
+          headerDiv.innerHTML = `
+            <h5 class="mb-1">${group.info?.nombre || 'Grupo sin nombre'}</h5>
+            <small>${group.info?.criterio || 'Sin criterio'}</small>
+          `;
+          groupDiv.appendChild(headerDiv);
+          
+          // Relaciones del grupo
+          group.items.forEach(relation => {
+            const originEmoji = getEmojiById(relation.emoji_origen_id);
+            const destEmoji = getEmojiById(relation.emoji_destino_id);
+            
+            if (!originEmoji || !destEmoji) return;
+            
+            const relationCard = document.createElement('div');
+            relationCard.className = 'relationship-card';
+            
+            relationCard.innerHTML = `
+              <div class="d-flex align-items-center">
+                <div class="text-center">
+                  <span class="emoji-large">${originEmoji.emoji}</span>
+                  <div><small>${originEmoji.titulo || 'Sin título'}</small></div>
+                </div>
+                
+                <div class="connection-arrow text-center mx-3">
+                  <i class="bi bi-arrow-right"></i>
+                  ${relation.etiqueta ? `<div class="connection-info">${relation.etiqueta}</div>` : ''}
+                </div>
+                
+                <div class="text-center">
+                  <span class="emoji-large">${destEmoji.emoji}</span>
+                  <div><small>${destEmoji.titulo || 'Sin título'}</small></div>
+                </div>
+                
+                <div class="flex-grow-1 text-end">
+                  <button class="btn btn-sm btn-outline-danger" onclick="deleteRelation(${relation.id})">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
+              </div>
+              
+              <div class="mt-2 d-flex justify-content-between">
+                <small class="text-muted">Orden: ${relation.orden}</small>
+                <small class="text-muted">ID: ${relation.id}</small>
+              </div>
+            `;
+            
+            groupDiv.appendChild(relationCard);
+          });
+          
+          container.appendChild(groupDiv);
+        });
+      }
+      
+      // Actualizar selectores de emojis
+      function updateEmojiSelectors() {
+        const relationGroup = document.getElementById('relation-group');
+        
+        // Añadir evento para actualizar selector de origen al cambiar grupo
+        relationGroup.addEventListener('change', function() {
+          const groupId = this.value;
+          updateEmojiOriginSelector(groupId);
+        });
+      }
+      
+      // Actualizar selector de emoji origen según grupo seleccionado
+      function updateEmojiOriginSelector(groupId) {
+        const container = document.getElementById('emoji-origin-selector');
+        container.innerHTML = '';
+        
+        if (!groupId) {
+          container.innerHTML = '<p class="text-center text-muted w-100">Seleccione un grupo primero</p>';
+          return;
+        }
+        
+        // Obtener todos los emojis activos
+        const activeEmojis = emojisList.filter(emoji => emoji.activo == 1);
+        
+        if (activeEmojis.length === 0) {
+          container.innerHTML = '<p class="text-center text-muted w-100">No hay emojis activos disponibles</p>';
+          return;
+        }
+        
+        // Crear elementos para cada emoji
+        activeEmojis.forEach(emoji => {
+          const emojiElement = document.createElement('div');
+          emojiElement.className = 'emoji-select-card';
+          emojiElement.dataset.id = emoji.id;
+          emojiElement.innerHTML = `
+            <div class="text-center">
+              <div class="emoji-badge">${emoji.emoji}</div>
+              <small>${emoji.titulo || `ID: ${emoji.id}`}</small>
+            </div>
+          `;
+          
+          emojiElement.addEventListener('click', function() {
+            // Quitar selección previa
+            container.querySelectorAll('.emoji-select-card').forEach(el => {
+              el.classList.remove('selected');
+            });
+            
+            // Añadir selección
+            this.classList.add('selected');
+            document.getElementById('emoji-origin-id').value = this.dataset.id;
+            
+            // Actualizar selector de destino
+            updateEmojiDestSelector(this.dataset.id);
+          });
+          
+          container.appendChild(emojiElement);
+        });
+      }
+      
+      // Actualizar selector de emoji destino
+      function updateEmojiDestSelector(originId) {
+        const container = document.getElementById('emoji-destination-selector');
+        container.innerHTML = '';
+        
+        if (!originId) {
+          container.innerHTML = '<p class="text-center text-muted w-100">Seleccione un origen primero</p>';
+          return;
+        }
+        
+        // Obtener todos los emojis activos excepto el origen
+        const activeEmojis = emojisList.filter(emoji => emoji.activo == 1 && emoji.id != originId);
+        
+        if (activeEmojis.length === 0) {
+          container.innerHTML = '<p class="text-center text-muted w-100">No hay otros emojis disponibles</p>';
+          return;
+        }
+        
+        // Crear elementos para cada emoji
+        activeEmojis.forEach(emoji => {
+          const emojiElement = document.createElement('div');
+          emojiElement.className = 'emoji-select-card';
+          emojiElement.dataset.id = emoji.id;
+          emojiElement.innerHTML = `
+            <div class="text-center">
+              <div class="emoji-badge">${emoji.emoji}</div>
+              <small>${emoji.titulo || `ID: ${emoji.id}`}</small>
+            </div>
+          `;
+          
+          emojiElement.addEventListener('click', function() {
+            // Quitar selección previa
+            container.querySelectorAll('.emoji-select-card').forEach(el => {
+              el.classList.remove('selected');
+            });
+            
+            // Añadir selección
+            this.classList.add('selected');
+            document.getElementById('emoji-destination-id').value = this.dataset.id;
+          });
+          
+          container.appendChild(emojiElement);
+        });
+      }
+      
+      // Guardar relación
+      function saveRelation(e) {
+        e.preventDefault();
+        
+        const groupId = document.getElementById('relation-group').value;
+        const originId = document.getElementById('emoji-origin-id').value;
+        const destId = document.getElementById('emoji-destination-id').value;
+        const orden = document.getElementById('relation-order').value;
+        const etiqueta = document.getElementById('relation-label').value;
+        const bidirectional = document.getElementById('bidirectional-relation').checked;
+        
+        if (!groupId) {
+          showMessage('Por favor, seleccione un grupo', 'danger');
+          return;
+        }
+        
+        if (!originId) {
+          showMessage('Por favor, seleccione un emoji de origen', 'danger');
+          return;
+        }
+        
+        if (!destId) {
+          showMessage('Por favor, seleccione un emoji de destino', 'danger');
+          return;
+        }
+        
+        // Crear FormData para enviar al servidor
+        const formData = new FormData();
+        formData.append('grupo_id', groupId);
+        formData.append('emoji_origen_id', originId);
+        formData.append('emoji_destino_id', destId);
+        formData.append('orden', orden);
+        formData.append('etiqueta', etiqueta);
+        formData.append('bidirectional', bidirectional ? '1' : '0');
+        
+        fetch('guardar_relacion_emoji.php', {
+          method: 'POST',
+          body: formData
+        })
+        .then(response => {
+          if (!response.ok) throw new Error('Error en la respuesta del servidor');
+          return response.json();
+        })
+        .then(data => {
+          if (data.success) {
+            showMessage(bidirectional ? 'Relaciones bidireccionales creadas correctamente' : 'Relación creada correctamente', 'success');
+            resetRelationForm();
+            loadRelations();
+            
+            // Actualizar contador en tabla de emojis
+            loadEmojis();
+          } else {
+            showMessage('Error al guardar la relación: ' + (data.error || 'Intentelo de nuevo'), 'danger');
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          showMessage('Error al guardar la relación', 'danger');
+        });
+      }
+      
+      // Eliminar relación
+      function deleteRelation(id) {
+        if (!confirm('¿Está seguro de que desea eliminar esta relación?')) {
+          return;
+        }
+        
+        fetch(`eliminar_relacion_emoji.php?id=${id}`)
+          .then(response => {
+            if (!response.ok) throw new Error('Error al eliminar');
+            return response.json();
+          })
+          .then(data => {
+            if (data.success) {
+              showMessage('Relación eliminada correctamente', 'success');
+              loadRelations();
+              // Actualizar contador en tabla de emojis
+              loadEmojis();
+            } else {
+              showMessage('Error al eliminar: ' + (data.error || 'Intentelo de nuevo'), 'danger');
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            showMessage('Error al eliminar la relación', 'danger');
+          });
+      }
+      
+      // Resetear formulario de relación
+      function resetRelationForm() {
+        document.getElementById('relation-form').reset();
+        document.getElementById('emoji-origin-id').value = '';
+        document.getElementById('emoji-destination-id').value = '';
+        
+        document.getElementById('emoji-origin-selector').innerHTML = '<p class="text-center text-muted w-100">Seleccione un grupo primero</p>';
+        document.getElementById('emoji-destination-selector').innerHTML = '<p class="text-center text-muted w-100">Seleccione un origen primero</p>';
+      }
+      
+      // ----------------------------------------------------
+      // FUNCIONES AUXILIARES
+      // ----------------------------------------------------
+      
+      // Función para mostrar mensajes
+      function showMessage(message, type) {
+        const container = document.getElementById('message-container');
+        container.textContent = message;
+        container.className = `alert alert-${type}`;
+        
+        // Hacer scroll al mensaje y ocultarlo después de 5 segundos
+        container.scrollIntoView({ behavior: 'smooth' });
+        setTimeout(() => {
+          container.className = 'alert alert-hidden';
+        }, 5000);
+      }
+      
+      // Obtener emoji por ID
+      function getEmojiById(id) {
+        return emojisList.find(emoji => emoji.id == id);
+      }
+      
+      // Obtener grupo por ID
+      function getGroupById(id) {
+        return groupsList.find(group => group.id == id);
+      }
+      
+      // Contar relaciones por grupo
+      function countRelationsByGroup(groupId) {
+        return relationsList.filter(rel => rel.grupo_id == groupId).length;
+      }
+      
+      // Obtener relaciones para un emoji
+      function getRelationshipsForEmoji(emojiId) {
+        return relationsList.filter(rel => rel.emoji_origen_id == emojiId || rel.emoji_destino_id == emojiId);
+      }
+      
+      // Event listeners
+      document.getElementById('new-emoji-btn').addEventListener('click', showForm);
+      document.getElementById('emoji-form').addEventListener('submit', saveEmoji);
+      document.getElementById('cancel-btn').addEventListener('click', hideForm);
+      
+      document.getElementById('group-form').addEventListener('submit', saveGroup);
+      document.getElementById('group-reset-btn').addEventListener('click', resetGroupForm);
+      
+      document.getElementById('relation-form').addEventListener('submit', saveRelation);
+      document.getElementById('relation-reset-btn').addEventListener('click', resetRelationForm);
+      
+      // Filtros de relaciones
+      document.getElementById('filter-relations-group').addEventListener('change', filterAndRenderRelations);
+      
+      // Inicializar elementos
+      initMap();
+      loadEmojis();
+      loadGroups();
+      loadRelations();
+      
+      // Funciones Globales
+      window.editEmoji = function(id) {
+        const emoji = emojisList.find(e => e.id == id);
+        if (!emoji) return;
+        
+        document.getElementById('form-title').textContent = 'Editar Emoji';
+        document.getElementById('emoji-id').value = emoji.id;
+        document.getElementById('emoji-symbol').value = emoji.emoji;
+        document.getElementById('emoji-preview').textContent = emoji.emoji;
+        document.getElementById('emoji-title').value = emoji.titulo || '';
+        document.getElementById('emoji-start-lat').value = emoji.lat_inicial;
+        document.getElementById('emoji-start-lng').value = emoji.lng_inicial;
+        document.getElementById('emoji-end-lat').value = emoji.lat_final;
+        document.getElementById('emoji-end-lng').value = emoji.lng_final;
+        document.getElementById('emoji-speed').value = emoji.velocidad;
+        document.getElementById('emoji-popup').value = emoji.mostrar_popup || '0';
+        document.getElementById('emoji-description').value = emoji.descripcion || '';
+        document.getElementById('emoji-active').value = emoji.activo;
+        
+        // Actualizar marcadores en el mapa
+        setStartPosition(parseFloat(emoji.lat_inicial), parseFloat(emoji.lng_inicial));
+        setEndPosition(parseFloat(emoji.lat_final), parseFloat(emoji.lng_final));
+        
+        // Mostrar el formulario
+        document.getElementById('form-card').style.display = 'block';
+        document.getElementById('form-card').scrollIntoView({ behavior: 'smooth' });
+      }
+      
+      window.deleteEmoji = function(id) {
+        if (!confirm('¿Está seguro de que desea eliminar este emoji? Esta acción no se puede deshacer.')) {
+          return;
+        }
+        
+        fetch(`eliminar_icono.php?id=${id}`)
+          .then(response => {
+            if (!response.ok) throw new Error('Error al eliminar el emoji');
+            return response.json();
+          })
+          .then(data => {
+            if (data.success) {
+              showMessage('Emoji eliminado correctamente', 'success');
+              loadEmojis();
+              loadRelations(); // Recargar relaciones porque pueden haberse eliminado al borrar el emoji
+            } else {
+              showMessage('Error al eliminar: ' + (data.error || 'Intente nuevamente'), 'danger');
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            showMessage('Error al eliminar el emoji', 'danger');
+          });
+      }
+      
+      window.editGroup = editGroup;
+      window.deleteGroup = deleteGroup;
+      window.deleteRelation = deleteRelation;
+    });
+  </script>
+</body>
+</html>

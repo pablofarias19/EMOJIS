@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>¡Gracias por tu aporte! | Mapita</title>
+    <link rel="stylesheet" href="styles/exito_producto.css">
+</head>
+<body>
+    <div class="contenedor-exito">
+        <div class="tarjeta-exito">
+            <div id="icono-emoji" class="icono-grande">📦</div>
+            <h1>¡YA SE CARGÓ TU APORTE EN MAPITA!</h1>
+            <p class="mensaje-exito">MUCHAS GRACIAS</p>
+            <div class="detalles-producto">
+                <p id="titulo-producto">Tu producto</p>
+                <p id="tipo-producto">Oferta</p>
+            </div>
+            <div class="botones-accion">
+                <!-- 
+                    IMPORTANTE: EDITA ESTA URL PARA CAMBIAR DÓNDE LLEVA EL BOTÓN "VER EN EL MAPA"
+                    Cambia "https://mapita.ar/" por tu URL correcta del mapa
+                -->
+                <a href="https://mapita.ar/" class="boton-primario" id="boton-ver-mapa">
+                    <span class="icono-mapa">🗺️</span> VER EN EL MAPA
+                </a>
+                
+                <!-- 
+                    IMPORTANTE: EDITA ESTA URL PARA CAMBIAR DÓNDE LLEVA EL BOTÓN "AGREGAR OTRO PRODUCTO"
+                    Cambia "agregar_producto.html" por tu URL correcta del formulario de agregar producto
+                -->
+                <a href="agregar_producto.html" class="boton-secundario" id="boton-agregar-otro">
+                    AGREGAR OTRO PRODUCTO
+                </a>
+                
+                <!-- 
+                    IMPORTANTE: EDITA ESTA URL PARA CAMBIAR DÓNDE LLEVA EL BOTÓN "VOLVER A INICIO" 
+                    Cambia "https://mapita.ar/" por tu URL correcta de la página principal
+                -->
+                <a href="https://www.mariacelesteortiz.com.ar/mapa_ir/mapaproductos_js.html" class="boton-texto" id="boton-inicio">
+                    Volver a inicio
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Función para obtener parámetros de la URL
+        function obtenerParametrosURL() {
+            const params = {};
+            const queryString = window.location.search.substring(1);
+            const pares = queryString.split('&');
+            
+            pares.forEach(par => {
+                const [clave, valor] = par.split('=');
+                if (clave && valor) {
+                    params[decodeURIComponent(clave)] = decodeURIComponent(valor);
+                }
+            });
+            
+            return params;
+        }
+        
+        // Al cargar la página, verifica si hay datos en localStorage o en la URL
+        document.addEventListener('DOMContentLoaded', function() {
+            // Intentar obtener datos del localStorage
+            const datosProducto = JSON.parse(localStorage.getItem('productoExitoso') || '{}');
+            
+            // Si no hay datos en localStorage, intentar obtener de URL
+            const paramsURL = obtenerParametrosURL();
+            
+            // Usar datos del localStorage o URL
+            const emoji = datosProducto.emoji || paramsURL.emoji || '📦';
+            const titulo = datosProducto.titulo || paramsURL.titulo || 'Tu producto';
+            const tipoAnuncio = datosProducto.tipo_anuncio || paramsURL.tipo || 'oferta';
+            const productoId = datosProducto.id || paramsURL.id;
+            
+            // Actualizar elementos en la página
+            document.getElementById('icono-emoji').textContent = emoji;
+            document.getElementById('titulo-producto').textContent = titulo;
+            document.getElementById('tipo-producto').textContent = 
+                tipoAnuncio === 'oferta' ? 'Oferta' : 'Búsqueda';
+            
+            // Limpiar datos después de usarlos
+            localStorage.removeItem('productoExitoso');
+            
+            // OPCIONAL: Si quieres añadir el ID del producto a la URL del mapa
+            // Descomenta estas líneas y edita la URL base
+            /*
+            if (productoId) {
+                const botonMapa = document.getElementById('boton-ver-mapa');
+                // La URL base debe coincidir con la que pusiste arriba en el href
+                const urlBaseMapa = 'https://mapita.ar/';
+                botonMapa.href = `${urlBaseMapa}?producto=${productoId}`;
+            }
+            */
+        });
+    </script>
+</body>
+</html>

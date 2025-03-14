@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Administración de Emojis</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="styles/admin_emojis.css">
+</head>
+<body>
+  <div class="container mt-4 mb-5">
+    <h1 class="mb-3">Administración de Emojis para el Mapa</h1>
+   
+   <!-- Añadir justo después de la etiqueta <h1> al inicio -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1>Administración de Emojis para el Mapa</h1>
+  <a href="mapa_emojis_mejorado.html" class="btn btn-primary" target="_blank">
+    <i class="bi bi-map"></i> Ver Mapa de Emojis
+  </a>
+</div>
+
+<!-- Reemplaza el botón de acción en la tabla de emojis para incluir un botón de vista previa -->
+<!-- Busca la sección de acciones en la tabla y reemplaza por: -->
+<td>
+  <div class="btn-group" role="group">
+    <button class="btn btn-primary btn-sm" onclick="editEmoji(${emoji.id})">Editar</button>
+    <button class="btn btn-danger btn-sm" onclick="deleteEmoji(${emoji.id})">Eliminar</button>
+    <a href="mapa_emojis_mejorado.html?emoji_id=${emoji.id}" class="btn btn-info btn-sm" target="_blank" title="Ver en mapa">
+      <i class="bi bi-eye"></i>
+    </a>
+  </div>
+</td>
+
+<!-- Añadir también en las otras pestañas -->
+<!-- Para grupos, añadir un botón de vista en mapa: -->
+<button class="btn btn-sm btn-info" onclick="window.open('mapa_emojis_mejorado.html?grupo_id=${group.id}', '_blank')">
+  <i class="bi bi-map"></i>
+</button>
+
+<!-- Para relaciones, añadir un botón de vista en mapa: -->
+<button class="btn btn-sm btn-info" onclick="window.open('mapa_emojis_mejorado.html?relacion_id=${relation.id}', '_blank')">
+  <i class="bi bi-map"></i>
+</button>
+
+<!-- Añadir este estilo al final del bloque de estilos o en el archivo CSS -->
+<style>
+  .preview-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background-color: #28a745;
+    color: white;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    font-size: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+</style>
+
+<!-- Añadir JavaScript adicional para mejorar la integración (al final del archivo) -->
+<script>
+  // Función para previsualizar un emoji en el mapa
+  function previewEmojiInMap(id) {
+    window.open(`mapa_emojis_mejorado.html?emoji_id=${id}`, '_blank');
+  }
+  
+  // Función para previsualizar un grupo en el mapa
+  function previewGroupInMap(id) {
+    window.open(`mapa_emojis_mejorado.html?grupo_id=${id}`, '_blank');
+  }
+  
+  // Función para previsualizar una relación en el mapa
+  function previewRelationInMap(id) {
+    window.open(`mapa_emojis_mejorado.html?relacion_id=${id}`, '_blank');
+  }
+  
+  // Función para detectar nuevas ediciones y mostrar contador de cambios pendientes
+  let changesCounter = 0;
+  
+  function trackChanges() {
+    changesCounter++;
+    document.title = `(${changesCounter}) Administración de Emojis`;
+    
+    // Actualizar el botón de vista del mapa
+    const viewMapBtn = document.querySelector('a[href="mapa_emojis_mejorado.html"]');
+    if (viewMapBtn) {
+      // Añadir un badge solo si no existe ya
+      if (!viewMapBtn.querySelector('.preview-badge')) {
+        const badge = document.createElement('div');
+        badge.className = 'preview-badge';
+        badge.textContent = changesCounter;
+        viewMapBtn.style.position = 'relative';
+        viewMapBtn.appendChild(badge);
+      } else {
+        viewMapBtn.querySelector('.preview-badge').textContent = changesCounter;
+      }
+    }
+  }
+  
+  // Conectar eventos de guardar con el contador de cambios
+  document.addEventListener('DOMContentLoaded', function() {
+    // Conectar al evento de guardar emoji
+    const emojiForm = document.getElementById('emoji-form');
+    if (emojiForm) {
+      const originalSubmit = emojiForm.onsubmit;
+      emojiForm.onsubmit = function(e) {
+        if (originalSubmit) originalSubmit.call(this, e);
+        trackChanges();
+      };
+    }
+    
+    // Conectar al evento de guardar grupo
+    const groupForm = document.getElementById('group-form');
+    if (groupForm) {
+      const originalSubmit = groupForm.onsubmit;
+      groupForm.onsubmit = function(e) {
+        if (originalSubmit) originalSubmit.call(this, e);
+        trackChanges();
+      };
+    }
+    
+    // Conectar al evento de guardar relación
+    const relationForm = document.getElementById('relation-form');
+    if (relationForm) {
+      const originalSubmit = relationForm.onsubmit;
+      relationForm.onsubmit = function(e) {
+        if (originalSubmit) originalSubmit.call(this, e);
+        trackChanges();
+      };
+    }
+  });
+</script>
+
+    <!-- Mensajes de alerta -->
+    <div id="message-container" class="alert alert-hidden"></div>
+    
+    <!-- Pestañas de navegación -->
+    <ul class="nav nav-tabs tabs-container" id="adminTabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="emojis-tab" data-bs-toggle="tab" data-bs-target="#emojis-tab-pane" type="button" role="tab">
+          <i class="bi bi-emoji-smile"></i> Emojis
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="groups-tab" data-bs-toggle="tab" data-bs-target="#groups-tab-pane" type="button" role="tab">
+          <i class="bi bi-collection"></i> Grupos de Vinculación
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="relations-tab" data-bs-toggle="tab" data-bs-target="#relations-tab-pane" type="button" role="tab">
+          <i class="bi bi-diagram-3"></i> Relaciones entre Emojis
+        </button>
+      </li>
+    </ul>
+    
+    <!-- Contenido de las pestañas -->
+    <div class="tab-content" id="adminTabContent">
+      <!-- TAB 1: EMOJIS -->
+      <div class="tab-pane fade show active" id="emojis-tab-pane" role="tabpanel" aria-labelledby="emojis-tab" tabindex="0">
+        <div class="card mb-4">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Listado de Emojis</h5>
+            <button id="new-emoji-btn" class="btn btn-primary">Agregar Nuevo</button>
+          </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Emoji</th>
+                    <th>Título</th>
+                    <th>Coordenadas Inicio</th>
+                    <th>Coordenadas Fin</th>
+                    <th>Velocidad</th>
+                    <th>Vinculaciones</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="emojis-table">
+                  <tr>
+                    <td colspan="9" class="text-center">Cargando emojis...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <!-- Formulario para agregar/editar emoji -->
+        <div class="card" id="form-card" style="display:none;">
+          <div class="card-header">
+            <h5 id="form-title">Agregar Emoji</h5>
+          </div>
+          <div class="card-body">
+            <form id="emoji-form">
+              <input type="hidden" id="emoji-id">
+              
+              <div class="row">
+                <div class="col-md-6">
+                  <!-- Emoji y título -->
+                  <div class="mb-3">
+                    <label for="emoji-symbol" class="form-label">Emoji:</label>
+                    <input type="text" class="form-control" id="emoji-symbol" placeholder="Ingrese un emoji (ejemplo: 🚀)">
+                    <div class="emoji-preview mt-2" id="emoji-preview">📍</div>
+                  </div>
+                  
+                  <div class="mb-3">
+                    <label for="emoji-title" class="form-label">Título:</label>
+                    <input type="text" class="form-control" id="emoji-title" placeholder="Título (opcional)">
+                  </div>
+                  
+                  <!-- Opciones adicionales -->
+                  <div class="mb-3">
+                    <label for="emoji-speed" class="form-label">Velocidad:</label>
+                    <select class="form-select" id="emoji-speed">
+                      <option value="0.0001">Muy lenta</option>
+                      <option value="0.0002">Lenta</option>
+                      <option value="0.0003" selected>Normal</option>
+                      <option value="0.0005">Rápida</option>
+                      <option value="0.001">Muy rápida</option>
+                    </select>
+                  </div>
+                  
+                  <div class="mb-3">
+                    <label for="emoji-popup" class="form-label">Mostrar información:</label>
+                    <select class="form-select" id="emoji-popup">
+                      <option value="0" selected>No mostrar</option>
+                      <option value="1">Mostrar popup con información</option>
+                    </select>
+                  </div>
+                  
+                  <div class="mb-3">
+                    <label for="emoji-description" class="form-label">Descripción:</label>
+                    <textarea class="form-control" id="emoji-description" rows="3" placeholder="Descripción para el popup (opcional)"></textarea>
+                  </div>
+                  
+                  <div class="mb-3">
+                    <label for="emoji-active" class="form-label">Estado:</label>
+                    <select class="form-select" id="emoji-active">
+                      <option value="1" selected>Activo</option>
+                      <option value="0">Inactivo</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <div class="col-md-6">
+                  <!-- Coordenadas y mapa -->
+                  <div class="mb-3">
+                    <label class="form-label">Posición inicial:</label>
+                    <div class="input-group mb-2">
+                      <span class="input-group-text">Lat:</span>
+                      <input type="text" class="form-control" id="emoji-start-lat" placeholder="Latitud inicial">
+                      <span class="input-group-text">Lng:</span>
+                      <input type="text" class="form-control" id="emoji-start-lng" placeholder="Longitud inicial">
+                    </div>
+                  </div>
+                  
+                  <div class="mb-3">
+                    <label class="form-label">Posición final:</label>
+                    <div class="input-group mb-2">
+                      <span class="input-group-text">Lat:</span>
+                      <input type="text" class="form-control" id="emoji-end-lat" placeholder="Latitud final">
+                      <span class="input-group-text">Lng:</span>
+                      <input type="text" class="form-control" id="emoji-end-lng" placeholder="Longitud final">
+                    </div>
+                  </div>
+                  
+                  <p class="text-muted mb-2">Haga clic en el mapa para establecer la posición inicial. Clic nuevamente para la posición final.</p>
+                  <div id="map"></div>
+                </div>
+              </div>
+              
+              <div class="mt-4 d-flex justify-content-end">
+                <button type="button" id="cancel-btn" class="btn btn-secondary me-2">Cancelar</button>
+                <button type="submit" class="btn btn-success">Guardar</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+      
+     <!-- TAB 2: GRUPOS DE VINCULACIÓN -->
+<div class="tab-pane fade" id="groups-tab-pane" role="tabpanel" aria-labelledby="groups-tab" tabindex="0">
+  <div class="row mt-3">
+    <div class="col-md-4">
+      <div class="card">
+        <div class="card-header">
+          <h5 id="group-form-title">Crear Nuevo Grupo</h5>
+        </div>
+        <div class="card-body">
+          <form id="group-form">
+            <input type="hidden" id="group-id" value="">
+            
+            <div class="mb-3">
+              <label for="group-name" class="form-label">Nombre del grupo:</label>
+              <input type="text" class="form-control" id="group-name" required placeholder="Ej: Casas en venta">
+            </div>
+            
+            <div class="mb-3">
+              <label for="group-criteria" class="form-label">Criterio de agrupación:</label>
+              <input type="text" class="form-control" id="group-criteria" required placeholder="Ej: tipo, color, autor">
+            </div>
+            
+            <div class="mb-3">
+              <label for="group-description" class="form-label">Descripción:</label>
+              <textarea class="form-control" id="group-description" rows="3" placeholder="Descripción opcional del grupo"></textarea>
+            </div>
+            
+            <div class="mb-3">
+              <label for="group-color" class="form-label">Color:</label>
+              <input type="color" class="form-control form-control-color" id="group-color" value="#4285F4" title="Elija un color para el grupo">
+            </div>
+            
+            <div class="d-flex justify-content-end">
+              <button type="button" id="group-reset-btn" class="btn btn-secondary me-2">Limpiar</button>
+              <button type="submit" class="btn btn-success">Guardar Grupo</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-md-8">
+      <div class="card">
+        <div class="card-header">
+          <h5>Grupos de Vinculación</h5>
+        </div>
+        <div class="card-body">
+          <div id="groups-container">
+            <p class="text-center text-muted">Cargando grupos...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+      <!-- TAB 3: RELACIONES ENTRE EMOJIS -->
+      <div class="tab-pane fade" id="relations-tab-pane" role="tabpanel" aria-labelledby="relations-tab" tabindex="0">
+        <div class="row mt-3">
+          <div class="col-md-5">
+            <div class="card">
+              <div class="card-header">
+                <h5>Crear Nueva Vinculación</h5>
+              </div>
+              <div class="card-body">
+                <form id="relation-form">
+                  <input type="hidden" id="relation-id" value="">
+                  
+                  <div class="mb-3">
+                    <label for="relation-group" class="form-label">Grupo de vinculación:</label>
+                    <select class="form-select" id="relation-group" required>
+                      <option value="">Seleccione un grupo...</option>
+                    </select>
+                  </div>
+                  
+                  <div class="mb-3">
+                    <label class="form-label">Emoji origen:</label>
+                    <div id="emoji-origin-selector" class="border rounded p-2 d-flex flex-wrap" style="max-height: 150px; overflow-y: auto;">
+                      <p class="text-center text-muted w-100">Seleccione un grupo primero</p>
+                    </div>
+                    <input type="hidden" id="emoji-origin-id">
+                  </div>
+                  
+                  <div class="mb-3">
+                    <label class="form-label">Emoji destino:</label>
+                    <div id="emoji-destination-selector" class="border rounded p-2 d-flex flex-wrap" style="max-height: 150px; overflow-y: auto;">
+                      <p class="text-center text-muted w-100">Seleccione un origen primero</p>
+                    </div>
+                    <input type="hidden" id="emoji-destination-id">
+                  </div>
+                  
+                  <div class="mb-3">
+                    <label for="relation-order" class="form-label">Orden de visualización:</label>
+                    <input type="number" class="form-control" id="relation-order" min="0" value="0" placeholder="Orden para listar la relación">
+                    <small class="text-muted">Número para ordenar las vinculaciones (0 = primero)</small>
+                  </div>
+                  
+                  <div class="mb-3">
+                    <label for="relation-label" class="form-label">Etiqueta de la conexión:</label>
+                    <input type="text" class="form-control" id="relation-label" placeholder="Ej: Ruta de acceso, Ver siguiente">
+                    <small class="text-muted">Texto que aparecerá sobre la flecha de conexión</small>
+                  </div>
+                  
+                  <div class="mb-3">
+                    <div class="form-check">
+                      <input class="form-check-input" type="checkbox" id="bidirectional-relation">
+                      <label class="form-check-label" for="bidirectional-relation">
+                        Crear relación bidireccional (ida y vuelta)
+                      </label>
+                    </div>
+                  </div>
+                  
+                  <div class="d-flex justify-content-end">
+                    <button type="button" id="relation-reset-btn" class="btn btn-secondary me-2">Limpiar</button>
+                    <button type="submit" class="btn btn-success">Guardar Relación</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+          
+          <div class="col-md-7">
+            <div class="card">
+              <div class="card-header d-flex justify-content-between align-items-center">
+               <h5>Relaciones Existentes</h5>
+                <div class="form-group m-0">
+                  <select class="form-select form-select-sm" id="filter-relations-group">
+                    <option value="0">Ver todos los grupos</option>
+                  </select>
+                </div>
+              </div>
+              <div class="card-body">
+                <div id="relations-container">
+                  <p class="text-center text-muted">Seleccione un grupo para ver sus relaciones</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <!-- Custom JS Modules -->
+  <script src="js/modules/admin_emojis_utils.js"></script>
+  <script src="js/modules/admin_emojis_map.js"></script>
+  <script src="js/modules/admin_emojis_emoji.js"></script>
+  <script src="js/modules/admin_emojis_groups.js"></script>
+  <script src="js/modules/admin_emojis_relations.js"></script>
+  <script src="js/admin_emojis.js"></script>
+</body>
+</html>

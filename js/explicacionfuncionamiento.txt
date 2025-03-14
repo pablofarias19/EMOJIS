@@ -1,0 +1,104 @@
+=======================================================
+MAPITA MAX - EXPLICACIÓN DEL FUNCIONAMIENTO DEL CÓDIGO
+=======================================================
+
+Este documento explica cómo funcionan los archivos JavaScript entre sí y con el HTML en la aplicación Mapita Max.
+
+1. ESTRUCTURA GENERAL
+===================
+
+El código ha sido dividido en archivos según su funcionalidad:
+
+- utils.js: Funciones de utilidad usadas por otros archivos
+- app.js: Inicialización de la aplicación y coordinación general
+- products.js: Lógica de productos, filtrado y visualización en mapa
+- emoji-animations.js: Manejo de emojis animados en el mapa
+- modals.js: Gestión de ventanas modales (detalles de productos)
+
+El HTML contiene la estructura de la página y carga todos estos scripts.
+
+2. ORDEN DE CARGA Y DEPENDENCIAS
+==============================
+
+El orden de carga es crucial para el correcto funcionamiento:
+
+1° utils.js: Debe cargarse primero porque contiene funciones usadas por todos
+2° app.js: Inicializa la aplicación y el objeto global appMapa
+3° products.js: Depende de app.js para acceder al mapa
+4° emoji-animations.js: Necesita el mapa inicializado en app.js
+5° modals.js: Trabaja con los productos cargados por products.js
+
+Si el orden es incorrecto, algunas funcionalidades pueden fallar.
+
+3. OBJETO GLOBAL APPMAPA
+======================
+
+Todo el estado de la aplicación se almacena en window.appMapa:
+
+- map: La instancia principal del mapa Leaflet
+- markersLayer: Capa que agrupa los marcadores de productos
+- markers: Array con referencias a los marcadores
+- productosData: Datos de productos cargados del servidor
+- emojiIntervals: Referencias a intervalos para animaciones
+- emojiMarkers: Referencias a marcadores de emojis animados
+
+Este objeto permite que diferentes archivos JS compartan información.
+
+4. FLUJO DE EJECUCIÓN
+===================
+
+1. El HTML se carga y configura la estructura de la página
+2. Al cargar app.js se ejecuta inicializarAplicacion() cuando el DOM está listo
+3. Se inicializa el mapa y sus componentes
+4. Se configuran los eventos de UI (filtros, botones)
+5. Se cargan los productos iniciales con cargarProductos()
+6. Se muestran en el mapa usando actualizarMapa()
+7. Se añaden emojis animados con agregarEmojisMoviles()
+8. Los eventos de usuario (clicks, búsquedas) activan funciones específicas
+
+5. INTERACCIONES PRINCIPALES
+=========================
+
+- Filtrado de productos:
+  HTML (select, botones) → UI Events en app.js → cargarProductos() → actualizarMapa()
+
+- Detalles de producto:
+  HTML (marcador) → mostrarDetalleProducto() en modals.js → Modal HTML
+
+- Emojis animados:
+  app.js → agregarEmojisMoviles() → setInterval para mover → limpiarIntervalosEmojis() al salir
+
+6. DEPURACIÓN Y SOLUCIÓN DE PROBLEMAS
+===================================
+
+Si los emojis animados no aparecen:
+1. Verificar en consola si hay errores
+2. Comprobar que movimiento_emoji3.php devuelve datos válidos
+3. Asegurarse que se ejecuta agregarEmojisMoviles() después de inicializar el mapa
+4. Confirmar que las coordenadas son números válidos
+
+Si los productos no se cargan:
+1. Verificar la respuesta de mapita_productos.php
+2. Comprobar que appMapa.map está correctamente inicializado
+3. Revisar los filtros aplicados
+
+7. MANTENIMIENTO
+==============
+
+Para añadir nuevas funcionalidades:
+- Identificar el archivo adecuado según la funcionalidad
+- Agregar métodos al objeto correspondiente
+- Actualizar las dependencias si es necesario
+- Mantener la estructura modular para facilitar el mantenimiento
+
+Las funciones globales importantes como cerrarModal(), mostrarDetalleProducto(), 
+cargarProductos() están disponibles para ser llamadas desde cualquier parte,
+incluido el HTML.
+
+8. SUGERENCIAS PARA MEJORAS
+=========================
+
+- Considerar el uso de un patrón de módulos más estricto
+- Implementar manejo de errores más robusto
+- Agregar documentación JSDoc a todas las funciones
+- Mejorar manejo asíncrono con async/await en lugar de promesas anidadas

@@ -1,0 +1,178 @@
+=============================================================
+DOCUMENTO EXPLICATIVO - ESTRUCTURA DEL INDEX.HTML DE MAPITA MAX
+=============================================================
+
+Este documento describe las diferentes secciones del archivo index.html
+y explica la función de cada una para facilitar el mantenimiento y
+desarrollo futuro.
+
+--------------------------------------------------------
+1. ESTRUCTURA GENERAL DEL DOCUMENTO
+--------------------------------------------------------
+
+El archivo index.html está estructurado en las siguientes secciones principales:
+
+- HEAD: Contiene metadatos, título y enlaces a archivos CSS
+- BODY: Contiene toda la interfaz visible y scripts
+  - Barra de accesibilidad superior
+  - Contenedor de búsqueda y filtros
+  - Mapa principal
+  - Modal para detalles de productos
+  - Info-box flotante
+  - Scripts externos y código JavaScript embebido
+
+--------------------------------------------------------
+2. SECCIÓN <HEAD>
+--------------------------------------------------------
+
+Contiene los metadatos del documento, incluyendo:
+
+- Codificación de caracteres (UTF-8)
+- Configuración del viewport para dispositivos móviles
+- Título de la página
+- Enlaces a archivos CSS externos de Leaflet y Leaflet.MarkerCluster
+- Enlaces a archivos CSS propios:
+  * responsive.css - Estilos para adaptar la interfaz a diferentes tamaños de pantalla
+  * menu-desplegable.css - Estilos para el menú desplegable superior
+  * info-box-fix.css - Estilos para el cuadro de información flotante
+  * custom-styles.css - Estilos personalizados generales
+
+--------------------------------------------------------
+3. BARRA DE ACCESIBILIDAD SUPERIOR
+--------------------------------------------------------
+
+Clase: "accessibility-bar"
+
+Contiene:
+- Botón de marca "MAPITA MAX" (id="brand-btn") que al pulsarse muestra/oculta el banner promocional
+- Banner promocional (id="promo-banner") con mensajes de promoción oculto inicialmente
+  
+Funcionalidad controlada por: menu-desplegable.js
+
+--------------------------------------------------------
+4. CONTENEDOR DE BÚSQUEDA Y FILTROS
+--------------------------------------------------------
+
+Clase: "search-container"
+
+Contiene:
+- Campo de búsqueda de texto y botón de búsqueda
+- Filtro desplegable de categorías (id="categoria-filter")
+- Filtro desplegable de subcategorías (id="subcategoria-filter") que se actualiza dinámicamente según la categoría seleccionada
+- Botones de tipo de anuncio (todos/ofertas/demandas) como grupo de botones tipo radio
+- Contador de resultados (id="stats")
+- Contenedor para mensajes de error (id="error-container")
+
+Funcionalidad controlada por: ui-events.js y products.js
+
+--------------------------------------------------------
+5. MAPA PRINCIPAL
+--------------------------------------------------------
+
+Id: "map"
+
+Es el elemento central de la aplicación donde se visualizan los marcadores de productos y los emojis en movimiento.
+- Inicializado como un mapa de Leaflet
+- Contiene una capa de agrupación de marcadores (MarkerCluster)
+- Muestra ubicaciones de productos con marcadores personalizados
+- Integra emojis animados que se mueven entre puntos
+
+Funcionalidad controlada por: map-init.js y emoji-animations.js (parte también en el script embebido)
+
+--------------------------------------------------------
+6. MODAL PARA DETALLES DE PRODUCTO
+--------------------------------------------------------
+
+Id: "product-modal"
+
+Ventana modal que se muestra al hacer clic en "Ver detalles" de un producto:
+- Encabezado con título y botón de cierre
+- Indicador de carga (id="modal-loading")
+- Contenedor para mensajes de error (id="modal-error")
+- Detalles del producto (id="product-detail") que incluye:
+  * Sección de imágenes con imagen principal y miniaturas
+  * Información del producto (emoji, tipo, categoría, título, precio, ubicación)
+  * Descripciones breve y detallada
+  * Botones para contactar vendedor y compartir
+
+Funcionalidad controlada por: modals.js
+
+--------------------------------------------------------
+7. INFO-BOX FLOTANTE
+--------------------------------------------------------
+
+Id: "info-box"
+
+Cuadro de información que aparece sobre el mapa con:
+- Título (id="info-title")
+- Descripción (id="info-description")
+- Detalles adicionales (id="info-details")
+- Botón para cerrar (id="close-info")
+
+Funcionalidad controlada por: info-box-fix.js y map-init.js
+
+--------------------------------------------------------
+8. SCRIPTS EXTERNOS
+--------------------------------------------------------
+
+Bibliotecas:
+- Leaflet: Biblioteca principal para el mapa interactivo
+- Leaflet.MarkerCluster: Plugin para agrupar marcadores cercanos
+
+Scripts propios:
+- utils.js: Funciones de utilidad usadas por otros scripts
+- map-init.js: Inicialización y configuración básica del mapa
+- products.js: Manejo de datos de productos, categorías y filtrado
+- ui-events.js: Gestión de interacciones de usuario (clicks, filtros)
+- modals.js: Manejo de ventanas modales para mostrar detalles
+- emoji-animations.js: Funciones para animaciones de emojis
+- app.js: Script principal que coordina la aplicación
+
+Otros scripts:
+- responsive.js: Ajustes para responsividad
+- menu-desplegable.js: Funcionalidad del menú superior
+- index-script-modificado.js: Scripts adicionales específicos del index
+- info-box-fix.js: Mejoras para el cuadro de información
+
+--------------------------------------------------------
+9. SCRIPT EMBEBIDO - EMOJIS CON MOVIMIENTO
+--------------------------------------------------------
+
+Al final del documento hay un script embebido específicamente para la funcionalidad de emojis con movimiento que contiene:
+
+- agregarEmojisMoviles(): Carga emojis desde movimiento_emoji3.php y los anima en el mapa
+- mostrarCartelEmoji(): Muestra información al interactuar con un emoji
+- limpiarIntervalosEmojis(): Limpia los intervalos de animación al cerrar la página
+
+Esta parte se mantiene embebida en el HTML para preservar su funcionamiento correcto, mientras que el resto de la lógica se ha movido a archivos JavaScript externos.
+
+--------------------------------------------------------
+10. FLUJO DE CARGA Y EJECUCIÓN
+--------------------------------------------------------
+
+1. Se carga la página y todos los recursos CSS
+2. Se cargan las bibliotecas JavaScript (Leaflet)
+3. Se cargan los scripts modularizados en orden (utils, map-init, products, etc.)
+4. Cuando el DOM está listo (DOMContentLoaded), se inicializa el mapa
+5. Se cargan los productos iniciales y se configuran los filtros
+6. Se inicializan los emojis en movimiento
+7. La aplicación queda lista para interacción del usuario
+
+--------------------------------------------------------
+11. INTERACCIONES PRINCIPALES
+--------------------------------------------------------
+
+- Búsqueda y filtrado: El usuario puede buscar productos por texto, categoría, subcategoría o tipo
+- Ver detalles: Al hacer clic en un marcador de producto se puede acceder a sus detalles
+- Contacto: Se puede contactar al vendedor desde el modal de detalles
+- Compartir: Los productos pueden compartirse mediante Web Share API
+- Emojis animados: Proporcionan elementos visuales dinámicos que se mueven por el mapa
+
+--------------------------------------------------------
+NOTAS PARA DESARROLLO FUTURO
+--------------------------------------------------------
+
+- Si se modifican las funciones de emojis en el script embebido, asegúrate de que sigan siendo compatibles con map-init.js
+- Cualquier cambio en la estructura de los datos de productos debe reflejarse en products.js y modals.js
+- El sistema de filtrado en ui-events.js debe mantenerse sincronizado con las categorías definidas en products.js
+- La inicialización del mapa en map-init.js es crítica para el funcionamiento de toda la aplicación

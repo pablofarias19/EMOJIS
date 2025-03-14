@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mapa de Productos y Servicios</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css" />
+  <!-- Incluir el nuevo CSS responsivo -->
+  <link rel="stylesheet" href="responsive.css">
+  <!-- Otros enlaces CSS -->
+  <link rel="stylesheet" href="menu-desplegable.css">
+  <link rel="stylesheet" href="info-box-fix.css">
+  <!-- Nuevo archivo de estilos generales -->
+  <link rel="stylesheet" href="custom-styles.css">
+  
+  <!-- Estilos para controlar tamaño de iconos -->
+  <style>
+    /* Control de tamaño para los iconos */
+    .leaflet-div-icon {
+      background: transparent !important;
+      border: none !important;
+    }
+    
+    /* Estilos base mejorados para todos los emojis */
+    .emoji-base {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle, white 60%, #f8f9fa 100%);
+      border-radius: 50%;
+      text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.4);
+      box-shadow: 
+        0 0 0 2px rgba(255, 255, 255, 0.9),
+        0 3px 6px rgba(0, 0, 0, 0.16),
+        0 1px 2px rgba(0, 0, 0, 0.23);
+      transition: all 0.25s cubic-bezier(0.165, 0.84, 0.44, 1);
+      z-index: 1;
+    }
+
+    /* Efecto de resplandor al hacer hover (para elementos interactivos) */
+    .emoji-base.interactive:hover {
+      transform: translateY(-2px) scale(1.05);
+      box-shadow: 
+        0 0 0 2px white,
+        0 6px 10px rgba(0, 0, 0, 0.15),
+        0 3px 6px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Emoji grande para previsualizaciones */
+    .emoji-preview {
+      font-size: 32px;
+      margin-bottom: 12px;
+      padding: 8px;
+      text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.35);
+      animation: float 3s infinite ease-in-out;
+    }
+
+    /* Emoji de tamaño mediano */
+    .emoji-large {
+      font-size: 26px;
+      padding: 6px 8px;
+    }
+
+    /* Emoji pequeño para badges */
+    .emoji-badge {
+      margin-right: 8px;
+      font-size: 20px;
+      padding: 5px 10px;
+    }
+
+    /* Tarjeta de selección de emojis */
+    .emoji-select-card {
+      cursor: pointer;
+      padding: 10px;
+      margin: 5px;
+      border-radius: 8px;
+      background-color: #f8f9fa;
+      border: 1px solid transparent;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+    }
+
+    .emoji-select-card:hover {
+      background-color: #e9ecef;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .emoji-select-card.selected {
+      background-color: #e7f1ff;
+      border: 1px solid #0d6efd;
+      box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.25);
+    }
+
+    /* Emoji dentro de tarjetas de selección */
+    .emoji-select-card .emoji {
+      display: inline-block;
+      font-size: 22px;
+      padding: 5px;
+      margin-right: 8px;
+    }
+
+    /* Para emojis que se mueven en el mapa */
+    .emoji-icon-controlado {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      transition: all 0.3s ease-out;
+      background: radial-gradient(circle, white 55%, rgba(255,255,255,0.9) 100%);
+      border-radius: 50%;
+      box-shadow: 
+        0 0 0 2px white,
+        0 4px 8px rgba(0, 0, 0, 0.2);
+      padding: 3px;
+      text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.4);
+    }
+
+    /* Animación de flotación para elementos destacados */
+    @keyframes float {
+      0% { transform: translateY(0); }
+      50% { transform: translateY(-5px); }
+      100% { transform: translateY(0); }
+    }
+
+    /* Aplicar herencia de estilos base */
+    .emoji-preview, .emoji-large, .emoji-badge {
+      composes: emoji-base;
+    }
+  </style>
+</head>
+<body>
+  <!-- Barra superior con marca destacada y promociones -->
+<div class="accessibility-bar">
+  <!-- Botón de marca (con la estructura adecuada para ser desplegable) -->
+  <button id="brand-btn" class="brand-btn" aria-label="MAPITA MAX" aria-expanded="false" aria-controls="promo-banner">
+    <span>MAPITA MAX</span>
+ </button>
+
+  <!-- Mensajes de promoción (con la clase para poder ocultarlos) -->
+  <div id="promo-banner" class="promo-banner hidden">
+    <span class="promo-item">🛒 NOVEDADES DE COMPRA VENTA</span>
+    <span class="promo-item">⚡ OFERTAS DE SERVICIOS Y TRABAJO</span>
+    <span class="promo-item">📍 SIEMPRE UNA PROMO CERCA SUYO</span>
+  </div>
+</div>
+
+  <div class="search-container">
+    <div class="search-row">
+      <input type="text" id="search-query" class="search-input" placeholder="Buscar productos..." aria-label="Buscar productos">
+      <button id="search-btn" class="search-btn" aria-label="Buscar">Buscar</button>
+    </div>
+    <div class="filters-container">
+      <select id="categoria-filter" class="filter-select" aria-label="Filtrar por categoría">
+        <option value="">Todas las categorías</option>
+                <option value="alimentos">🍎 Alimentos</option>
+        <option value="ropa">👕 Ropa</option>
+        <option value="calzado">👟 Calzado</option>
+        <option value="juguetes">🧸 Juguetes</option>
+        <option value="libros">📚 Libros</option>
+        <option value="electronica">📱 Electrónica</option>
+        <option value="hogar">🏠 Hogar y Decoración</option>
+        <option value="servicios">🔧 Servicios</option>
+        <option value="vehiculos">🚗 Vehículos</option>
+        <option value="inmuebles">🏢 Inmuebles</option>
+        <option value="trabajo">💼 Trabajo</option>
+        <option value="otros">🔄 Otros</option>
+      </select>
+      <select id="subcategoria-filter" class="filter-select" aria-label="Filtrar por subcategoría">
+        <option value="">Todas las subcategorías</option>
+        <!-- Se llenará dinámicamente -->
+      </select>
+      <div class="tipo-btns" role="radiogroup" aria-label="Tipo de anuncio">
+        <button id="tipo-todos" class="tipo-btn active" data-tipo="" role="radio" aria-checked="true" tabindex="0">Todos</button>
+        <button id="tipo-oferta" class="tipo-btn" data-tipo="oferta" role="radio" aria-checked="false" tabindex="0">📢 Ofertas</button>
+        <button id="tipo-demanda" class="tipo-btn" data-tipo="demanda" role="radio" aria-checked="false" tabindex="0">🔍 Demandas</button>
+      </div>
+    </div>
+    <div id="stats" class="stats" aria-live="polite">Mostrando 0 resultados</div>
+    <div id="error-container" aria-live="assertive"></div>
+  </div>
+  
+  <div id="map" aria-label="Mapa interactivo de productos" role="application"></div>
+  
+  <!-- Modal para detalles de producto -->
+  <div id="product-modal" class="modal" role="dialog" aria-labelledby="modal-product-title" aria-hidden="true">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modal-product-title">Detalles del producto</h3>
+        <button class="modal-close" onclick="cerrarModal()" aria-label="Cerrar">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="modal-loading" aria-live="polite">Cargando datos del producto...</div>
+        <div id="modal-error" class="error-message" style="display: none;" aria-live="assertive"></div>
+        <div id="product-detail" class="product-detail" style="display: none;">
+          <div class="product-images">
+            <div id="no-images" class="no-image">Sin imágenes disponibles</div>
+            <img id="main-image" class="main-image" src="" alt="" style="display: none;">
+            <div id="thumbnail-container" class="thumbnail-container" aria-label="Miniaturas de imágenes"></div>
+          </div>
+          <div class="product-info">
+            <div class="product-meta">
+              <span id="product-emoji" class="emoji-large" style="font-size: 24px;" aria-hidden="true"></span>
+              <span id="product-tipo" class="product-badge" aria-live="polite"></span>
+              <span id="product-categoria" class="product-badge"></span>
+            </div>
+            <h2 id="product-title"></h2>
+            <div id="product-price" class="product-price" aria-live="polite"></div>
+            <div id="product-location" class="product-location"></div>
+            
+            <div class="product-description">
+              <h4>Descripción breve:</h4>
+              <p id="product-short-desc"></p>
+              
+              <h4>Descripción detallada:</h4>
+              <div id="product-long-desc"></div>
+            </div>
+            
+            <div class="product-contact">
+              <!-- Botón sin 'onclick' fijo -->
+              <button class="contact-btn" id="contact-seller-btn" aria-label="Contactar vendedor">
+                Contactar Interesado
+              </button>
+              <button class="contact-btn" style="background-color: #2196F3;" onclick="compartirProducto()" aria-label="Compartir">Compartir</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+ <div id="info-box" class="info-box-container">
+  <h3 id="info-title">Cargando...</h3>
+  <p id="info-description"></p>
+  <small id="info-details"></small>
+  <button id="close-info" onclick="cerrarInfoBox()" aria-label="Cerrar información">✖</button>
+</div>
+
+  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
+  
+  <!-- Archivos JavaScript modularizados (usando los nombres que tienes) -->
+  <script src="js/utils.js"></script>
+  <script src="js/map-init.js"></script>
+  <script src="js/products.js"></script>
+  <script src="js/ui-events.js"></script>
+  <script src="js/modals.js"></script>
+  <script src="js/emoji-animations.js"></script>
+  <script src="js/app.js"></script>
+  
+  <!-- Otros scripts existentes -->
+  <script src="responsive.js"></script>
+  <script src="menu-desplegable.js"></script>
+  <script src="index-script-modificado.js"></script>
+  <script src="info-box-fix.js"></script>
+  <script src="https://unpkg.com/leaflet-polylinedecorator/dist/leaflet.polylineDecorator.js"></script>
+<script src="js/emoji-vinculos.js"></script>
+  
+  <script>
+   // Funciones para control de iconos según el zoom
+   function calcularEscalaSegunZoom() {
+     if (!window.appMapa || !window.appMapa.map) return 1;
+     
+     const zoom = window.appMapa.map.getZoom();
+     // Escala inversa: más pequeño cuando hay menos zoom
+     if (zoom <= 6) return 0.2;
+     if (zoom <= 8) return 0.3;
+     if (zoom <= 10) return 0.5;
+     if (zoom <= 12) return 0.7;
+     return 1; // Tamaño normal a partir de zoom 13+
+   }
+   
+  function crearIconoEmoji(emoji) {
+    const escala = calcularEscalaSegunZoom();
+    const tamanioBase = 30;
+    const tamanioFinal = Math.max(15, tamanioBase * escala);
+    
+    return L.divIcon({
+      // Añadimos la clase interactive al div y aplicamos las clases emoji-base
+      html: `<div class="emoji-icon-controlado emoji-base interactive" style="font-size: ${tamanioFinal}px;">${emoji}</div>`,
+      className: '',
+      iconSize: [40 * escala, 40 * escala],
+      iconAnchor: [20 * escala, 20 * escala]
+    });
+  }
+   
+   // Función para actualizar tamaños cuando cambia el zoom (versión corregida)
+function actualizarTamanioIconos() {
+  if (!window.appMapa || !window.appMapa.map) return;
+  
+  const escala = calcularEscalaSegunZoom();
+  
+  // Solo actualizar visualmente los emojis animados sin recargar nada
+  if (window.appMapa.emojiMarkers && window.appMapa.emojiMarkers.length > 0) {
+    window.appMapa.emojiMarkers.forEach((marker, index) => {
+      const tamanioBase = 30;
+      const tamanioFinal = Math.max(15, tamanioBase * escala);
+      
+      // Buscar el div interno del emoji
+      const iconElement = marker.getElement();
+      if (iconElement) {
+        const emojiDiv = iconElement.querySelector('div');
+        if (emojiDiv) {
+          emojiDiv.style.fontSize = `${tamanioFinal}px`;
+          emojiDiv.style.transform = `scale(${escala})`;
+        }
+      }
+    });
+  }
+  
+  // NO recargar los productos, solo actualizar visualmente si necesitamos
+  if (window.appMapa.markers && window.appMapa.markers.length > 0) {
+    // Aquí podrías añadir código para ajustar visualmente los marcadores existentes
+    // sin recargar datos ni cambiar la vista del mapa
+  }
+}
+   
+   // Función para agregar emojis móviles desde MySQL con control de tamaño
+   function agregarEmojisMoviles(map) {
+     // Limpiar intervalos existentes si hay
+     limpiarIntervalosEmojis();
+     
+     // Guardar referencia para los intervalos
+     window.appMapa.emojiIntervals = [];
+     window.appMapa.emojiMarkers = [];
+     
+     // Añadir evento de zoom para actualizar tamaños
+     map.off('zoomend', actualizarTamanioIconos); // Eliminar duplicados
+     map.on('zoomend', actualizarTamanioIconos);
+     
+     fetch('movimiento_emoji3.php')
+       .then(response => {
+         if (!response.ok) {
+           throw new Error('Error al cargar emojis: ' + response.status);
+         }
+         return response.json();
+       })
+       .then(data => {
+         // Si no hay datos o es un array vacío, no hacer nada
+         if (!data || (Array.isArray(data) && data.length === 0)) {
+           console.log("No hay emojis para mostrar");
+           return;
+         }
+         
+         // Comprobar si data es un array o un objeto único
+         const iconos = Array.isArray(data) ? data : [data];
+         
+         // Para cada icono en la respuesta
+         iconos.forEach(icono => {
+           // Extraer las coordenadas según la estructura de datos
+           const inicioLat = parseFloat(icono.inicio?.lat || icono.lat_inicial || 0);
+           const inicioLng = parseFloat(icono.inicio?.lng || icono.lng_inicial || 0);
+           const finLat = parseFloat(icono.fin?.lat || icono.lat_final || 0);
+           const finLng = parseFloat(icono.fin?.lng || icono.lng_final || 0);
+           
+           // Verificar si hay datos válidos
+           if (isNaN(inicioLat) || isNaN(inicioLng) || isNaN(finLat) || isNaN(finLng)) {
+             console.error("Coordenadas inválidas para icono:", icono);
+             return;
+           }
+           
+           // Si las coordenadas son todas 0, no mostrar
+           if (inicioLat === 0 && inicioLng === 0 && finLat === 0 && finLng === 0) {
+             console.log("Coordenadas en cero, no se mostrará:", icono);
+             return;
+           }
+           
+           const emoji = icono.emoji || '🚀';
+           const velocidad = parseFloat(icono.velocidad) || 0.0003;
+           const titulo = icono.titulo || '';
+           const descripcion = icono.descripcion || '';
+           const mostrarPopup = icono.mostrar_popup == 1 || icono.popup === true;
+           
+           // Crear posiciones para animación
+           let posicion = { lat: inicioLat, lng: inicioLng };
+           let direccion = 1; // 1 = hacia el final, -1 = hacia el inicio
+           
+           // Definir el ícono de Leaflet para el emoji con tamaño controlado
+           const emojiIcon = crearIconoEmoji(emoji);
+           
+           // Crear el marcador
+           let emojiMarker = L.marker([posicion.lat, posicion.lng], {
+             icon: emojiIcon
+           });
+           
+          
+        // MODIFICA TU CÓDIGO EXISTENTE
+// Busca donde creas los popups de emojis (aproximadamente línea 491)
+
+if (mostrarPopup && (titulo || descripcion)) {
+  const popupContent = `
+    <div style="text-align:center; min-width: 150px;">
+      <h3 style="margin-top:5px; margin-bottom:8px;">${titulo}</h3>
+      <p style="margin:0">${descripcion}</p>
+      <div style="margin-top: 10px;">
+        <button onclick="mostrarRelacionesEmoji(${icono.id})" 
+                style="background:#3498db; color:white; border:none; 
+                padding:5px 10px; border-radius:4px; cursor:pointer; font-size:12px;">
+          🔗 Ver relacionados
+        </button>
+      </div>
+    </div>
+  `;
+  
+  // Guardar el id en el elemento HTML del marcador para poder encontrarlo después
+  const emojiIcon = crearIconoEmoji(emoji);
+  emojiMarker = L.marker([posicion.lat, posicion.lng], {
+    icon: emojiIcon
+  });
+  
+  // Añadir el ID al HTML del marcador
+  emojiMarker.on('add', function(e) {
+    if (e.target._icon) {
+      e.target._icon.setAttribute('data-id', icono.id);
+    }
+  });
+  
+  emojiMarker.bindPopup(popupContent);
+}
+          
+          
+           // Añadir al mapa
+           emojiMarker.addTo(map);
+           
+           // Guardamos una referencia al marcador
+           if (!window.appMapa.emojiMarkers) {
+             window.appMapa.emojiMarkers = [];
+           }
+           window.appMapa.emojiMarkers.push(emojiMarker);
+           
+           // Calcular incrementos para un movimiento más natural
+           // Este enfoque utiliza vectores para mover de forma lineal entre los puntos
+           const deltaLat = finLat - inicioLat;
+           const deltaLng = finLng - inicioLng;
+           const distancia = Math.sqrt(deltaLat * deltaLat + deltaLng * deltaLng);
+           
+           // Si la distancia es casi cero, no mover
+           if (distancia < 0.0000001) {
+             console.log("Distancia muy pequeña, no se animará:", icono);
+             return;
+           }
+           
+           // Normalizar para obtener dirección
+           const dirLat = deltaLat / distancia;
+           const dirLng = deltaLng / distancia;
+           
+           // Función para mover el emoji entre dos puntos
+           function moverEmoji() {
+             // Calcular siguiente paso
+             const pasoLat = velocidad * direccion * dirLat;
+             const pasoLng = velocidad * direccion * dirLng;
+             
+             // Actualizar posición
+             posicion.lat += pasoLat;
+             posicion.lng += pasoLng;
+             
+             // Actualizar marcador
+             emojiMarker.setLatLng([posicion.lat, posicion.lng]);
+             
+             // Verificar si ha llegado a los extremos para cambiar dirección
+             if (direccion === 1) {
+               // Calculamos si se pasó del punto final
+               const distanciaActualAlFin = Math.sqrt(
+                 Math.pow(finLat - posicion.lat, 2) + 
+                 Math.pow(finLng - posicion.lng, 2)
+               );
+               
+               if (distanciaActualAlFin < velocidad) {
+                 // Si está muy cerca del final, invertir dirección
+                 direccion = -1;
+               }
+             } else {
+               // Calculamos si se pasó del punto inicial
+               const distanciaActualAlInicio = Math.sqrt(
+                 Math.pow(inicioLat - posicion.lat, 2) + 
+                 Math.pow(inicioLng - posicion.lng, 2)
+               );
+               
+               if (distanciaActualAlInicio < velocidad) {
+                 // Si está muy cerca del inicio, invertir dirección
+                 direccion = 1;
+               }
+             }
+           }
+           
+           // Crear y guardar el intervalo
+           const interval = setInterval(moverEmoji, 50); // 50ms para movimiento más fluido
+           
+           if (!window.appMapa.emojiIntervals) {
+             window.appMapa.emojiIntervals = [];
+           }
+           window.appMapa.emojiIntervals.push(interval);
+         });
+       })
+       .catch(error => {
+         console.error('Error al cargar emojis:', error);
+       });
+   }
+
+
+// Función para mostrar un cartel con indicación al hacer clic en un emoji
+function mostrarCartelEmoji(emoji, mensaje) {
+  // Crear o actualizar el cartel
+  let cartel = document.getElementById('cartel-emoji');
+  
+  if (!cartel) {
+    cartel = document.createElement('div');
+    cartel.id = 'cartel-emoji';
+    cartel.style.position = 'fixed';
+    cartel.style.top = '80px';
+    cartel.style.left = '50%';
+    cartel.style.transform = 'translateX(-50%)';
+    cartel.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+    cartel.style.color = 'white';
+    cartel.style.padding = '15px 25px';
+    cartel.style.borderRadius = '8px';
+    cartel.style.zIndex = '1000';
+    cartel.style.textAlign = 'center';
+    cartel.style.boxShadow = '0 4px 8px rgba(0,0,0,0.3)';
+    cartel.style.fontSize = '18px';
+    cartel.style.maxWidth = '80%';
+    cartel.style.transition = 'opacity 0.3s ease-in-out';
+    document.body.appendChild(cartel);
+  }
+  
+  // Limpiar el mensaje de posibles HTML o caracteres especiales
+  const mensajeLimpio = mensaje ? limpiarTexto(mensaje) : 'Sin información';
+  
+  // Actualizar el texto usando innerHTML de forma controlada
+  cartel.innerHTML = ''; // Limpiar primero
+  
+  // Agregar el emoji
+  const spanEmoji = document.createElement('span');
+  spanEmoji.className = 'emoji-badge'; // Aplicamos la clase emoji-badge
+  spanEmoji.style.fontSize = '24px';
+  spanEmoji.style.marginRight = '10px';
+  spanEmoji.textContent = emoji;
+  cartel.appendChild(spanEmoji);
+  
+  // Agregar el texto
+  const textoNodo = document.createTextNode(' ' + mensajeLimpio);
+  cartel.appendChild(textoNodo);
+  
+  // Mostrar
+  cartel.style.opacity = '1';
+  
+  // Ocultar después de 5 segundos
+  clearTimeout(window.appMapa.timeoutCartel);
+  window.appMapa.timeoutCartel = setTimeout(() => {
+    cartel.style.opacity = '0';
+    setTimeout(() => {
+      if (cartel.parentNode) {
+        cartel.parentNode.removeChild(cartel);
+      }
+    }, 300);
+  }, 5000);
+  
+  // Función auxiliar para limpiar texto
+  function limpiarTexto(texto) {
+    if (typeof texto !== 'string') {
+      return String(texto);
+    }
+    // Reemplazar entidades HTML y caracteres especiales
+    return texto
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+}
+
+// Limpiar todos los intervalos al desmontar el componente o cambiar de página
+function limpiarIntervalosEmojis() {
+  if (window.appMapa && window.appMapa.emojiIntervals) {
+    window.appMapa.emojiIntervals.forEach(interval => clearInterval(interval));
+    window.appMapa.emojiIntervals = [];
+  }
+  
+  if (window.appMapa && window.appMapa.emojiInterval) {
+    clearInterval(window.appMapa.emojiInterval);
+    window.appMapa.emojiInterval = null;
+  }
+  
+  // Limpiar referencias a marcadores
+  if (window.appMapa && window.appMapa.emojisMoviles) {
+    for (const id in window.appMapa.emojisMoviles) {
+      const emoji = window.appMapa.emojisMoviles[id];
+      if (emoji.marker && window.appMapa.map) {
+        window.appMapa.map.removeLayer(emoji.marker);
+      }
+    }
+    window.appMapa.emojisMoviles = {};
+  }
+}
+
+// Añadir la clase interactive a los emojis existentes en el DOM cuando se carga la página
+document.addEventListener('DOMContentLoaded', function() {
+  // Para emojis estáticos en la interfaz
+  document.querySelectorAll('.emoji-badge, .emoji-large, .emoji-preview').forEach(emoji => {
+    emoji.classList.add('emoji-base');
+    emoji.classList.add('interactive');
+  });
+  
+  // Para emojis en selectores
+  document.querySelectorAll('.emoji-select-card .emoji').forEach(emoji => {
+    emoji.classList.add('emoji-base');
+    emoji.classList.add('interactive');
+  });
+});
+
+// Anular las referencias a archivos que no existen
+document.addEventListener('DOMContentLoaded', function() {
+  // Detectar si los scripts icon-manager.js e icon-limits.css existen
+  // y eliminar las referencias si no existen
+  const iconManagerScript = document.querySelector('script[src="js/icon-manager.js"]');
+  if (iconManagerScript) {
+    console.log('Detectada referencia a js/icon-manager.js. Se usará el código incorporado en su lugar.');
+    // No lo eliminamos físicamente para evitar errores, pero sabemos que usaremos nuestro código interno
+  }
+});
+// Añade esto al final de tu script existente (justo antes

@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Mapa interactivo de emojis con sistema de búsqueda y relaciones">
+  <meta name="theme-color" content="#4285f4">
+  <title>Mapa de Emojis con Relaciones</title>
+  
+  <!-- Hojas de estilo base -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: Arial, sans-serif;
+    }
+    
+    #map {
+      height: 100vh;
+      width: 100%;
+      z-index: 0;
+    }
+    
+    /* Estilos para panel superior */
+    .top-bar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      background-color: rgba(255, 255, 255, 0.9);
+      z-index: 1000;
+      padding: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+    
+    .logo {
+      font-weight: bold;
+      font-size: 1.2rem;
+      color: #333;
+      display: flex;
+      align-items: center;
+    }
+    
+    .logo-emoji {
+      font-size: 1.5rem;
+      margin-right: 8px;
+    }
+    
+    .nav-items {
+      display: flex;
+    }
+    
+    .nav-button {
+      margin-left: 10px;
+      padding: 8px 15px;
+      background-color: #f8f9fa;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+      text-decoration: none;
+      color: #333;
+      display: flex;
+      align-items: center;
+    }
+    
+    .nav-button:hover {
+      background-color: #e9ecef;
+    }
+    
+    .admin-button {
+      background-color: #4285F4;
+      color: white;
+      border-color: #3367d6;
+    }
+    
+    .admin-button:hover {
+      background-color: #3367d6;
+      color: white;
+    }
+    
+    .nav-button i {
+      margin-right: 5px;
+    }
+    
+    /* Estilos para emojis */
+    .emoji-base {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle, white 60%, #f8f9fa 100%);
+      border-radius: 50%;
+      text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.4);
+      box-shadow: 
+        0 0 0 2px rgba(255, 255, 255, 0.9),
+        0 3px 6px rgba(0, 0, 0, 0.16),
+        0 1px 2px rgba(0, 0, 0, 0.23);
+      transition: all 0.25s cubic-bezier(0.165, 0.84, 0.44, 1);
+      z-index: 1;
+    }
+    
+    .interactive:hover {
+      transform: translateY(-2px) scale(1.05);
+      box-shadow: 
+        0 0 0 2px white,
+        0 6px 10px rgba(0, 0, 0, 0.15),
+        0 3px 6px rgba(0, 0, 0, 0.2);
+    }
+    
+    .emoji-contenedor {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background: radial-gradient(circle, white 60%, #f8f9fa 100%);
+      box-shadow: 
+        0 0 0 2px rgba(255, 255, 255, 0.9),
+        0 3px 6px rgba(0, 0, 0, 0.16),
+        0 1px 2px rgba(0, 0, 0, 0.23);
+      overflow: hidden;
+      transform-origin: center center;
+      transition: all 0.2s ease-out;
+    }
+    
+    .emoji-icon-controlado {
+      position: relative;
+      text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.4);
+      transition: font-size 0.2s ease-out;
+    }
+    
+    /* Estilos para el resaltado de emoji */
+    .highlighted-emoji {
+      z-index: 1000 !important;
+      filter: drop-shadow(0 0 8px rgba(255, 255, 0, 0.8));
+      transform: scale(1.2);
+      transition: all 0.3s ease;
+    }
+    
+    /* Estilos para ventana modal de ayuda */
+    .modal-help {
+      display: none;
+      position: fixed;
+      z-index: 2000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.4);
+    }
+    
+    .modal-help-content {
+      background-color: #fefefe;
+      margin: 10% auto;
+      padding: 20px;
+      border: 1px solid #888;
+      width: 80%;
+      max-width: 600px;
+      border-radius: 8px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+    
+    .close-help {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    
+    .close-help:hover {
+      color: black;
+    }
+    
+    .help-section {
+      margin-bottom: 20px;
+    }
+    
+    .help-section h3 {
+      border-bottom: 1px solid #eee;
+      padding-bottom: 5px;
+      margin-bottom: 10px;
+    }
+    
+    .help-tip {
+      background-color: #f8f9fa;
+      padding: 10px;
+      border-left: 3px solid #4285F4;
+      margin-bottom: 10px;
+    }
+    
+    /* Barra de estado en la parte inferior */
+    .status-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background-color: rgba(255, 255, 255, 0.9);
+      z-index: 1000;
+      padding: 5px 10px;
+      font-size: 12px;
+      color: #666;
+      display: flex;
+      justify-content: space-between;
+      border-top: 1px solid #eee;
+    }
+    
+    /* Panel de relaciones */
+    .relaciones-panel {
+      position: absolute;
+      bottom: 30px;
+      right: 10px;
+      background: white;
+      border-radius: 4px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      z-index: 1000;
+      padding: 10px;
+      width: 300px;
+      max-height: 400px;
+      overflow-y: auto;
+      display: none;
+    }
+    
+    .relacion-item {
+      padding: 8px;
+      border-bottom: 1px solid #eee;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+    }
+    
+    .relacion-item:hover {
+      background-color: #f5f5f5;
+    }
+    
+    .relacion-emoji {
+      font-size: 20px;
+      margin-right: 10px;
+    }
+    
+    .cerrar-panel {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      color: #aaa;
+    }
+    
+    .cerrar-panel:hover {
+      color: #333;
+    }
+    
+    /* Tooltip personalizado */
+    .emoji-tooltip {
+      background-color: white;
+      border: none;
+      border-radius: 8px;
+      box-shadow: 0 3px 14px rgba(0,0,0,0.4);
+      padding: 10px;
+      max-width: 250px;
+    }
+    
+    .emoji-tooltip h3 {
+      margin: 0 0 5px 0;
+      font-size: 16px;
+    }
+    
+    .emoji-tooltip p {
+      margin: 0;
+      font-size: 14px;
+    }
+    
+    /* Estilos responsivos */
+    @media (max-width: 768px) {
+      .top-bar {
+        padding: 5px 10px;
+      }
+      
+      .logo-text {
+        display: none;
+      }
+      
+      .nav-button span {
+        display: none;
+      }
+      
+      .nav-button i {
+        margin-right: 0;
+      }
+      
+      .relaciones-panel {
+        width: 100%;
+        left: 0;
+        right: 0;
+        bottom: 30px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Barra superior -->
+  <div class="top-bar">
+    <div class="logo">
+      <div class="logo-emoji">🗺️</div>
+      <div class="logo-text">Mapa de Emojis</div>
+    </div>
+    <div class="nav-items">
+      <a href="admin_emojis.html" class="nav-button admin-button">
+        <i class="bi bi-gear"></i>
+        <span>Administrar</span>
+      </a>
+      <button class="nav-button" id="help-button">
+        <i class="bi bi-question-circle"></i>
+        <span>Ayuda</span>
+      </button>
+      <button class="nav-button" id="add-emoji-button">
+        <i class="bi bi-plus-circle"></i>
+        <span>Añadir Emoji</span>
+      </button>
+    </div>
+  </div>
+  
+  <!-- Contenedor del mapa -->
+  <div id="map"></div>
+  
+  <!-- Panel de relaciones (inicialmente oculto) -->
+  <div id="relaciones-panel" class="relaciones-panel">
+    <div class="cerrar-panel" id="cerrar-relaciones">✕</div>
+    <h3 id="relaciones-titulo">Relaciones</h3>
+    <div id="relaciones-lista"></div>
+  </div>
+  
+  <!-- Barra de estado -->
+  <div class="status-bar">
+    <div class="status-info">Cargando emojis...</div>
+    <div class="status-coords"></div>
+  </div>
+  
+  <!-- Ventana modal de ayuda -->
+  <div id="help-modal" class="modal-help">
+    <div class="modal-help-content">
+      <span class="close-help">&times;</span>
+      <h2>Ayuda - Mapa de Emojis</h2>
+      
+      <div class="help-section">
+        <h3>Navegación</h3>
+        <p>Para navegar por el mapa:</p>
+        <ul>
+          <li><strong>Desplazamiento</strong>: Haz clic y arrastra para mover el mapa.</li>
+          <li><strong>Zoom</strong>: Usa la rueda del ratón o los botones + y - para acercar o alejar.</li>
+          <li><strong>Ver detalles</strong>: Haz clic en cualquier emoji para ver su información.</li>
+        </ul>
+      </div>
+      
+      <div class="help-section">
+        <h3>Relaciones entre emojis</h3>
+        <p>Cuando seleccionas un emoji, verás:</p>
+        <ul>
+          <li><strong>Panel de relaciones</strong>: Muestra los emojis vinculados.</li>
+          <li><strong>Flechas de conexión</strong>: Visualiza las relaciones directamente en el mapa.</li>
+          <li><strong>Navegación</strong>: Haz clic en cualquier emoji relacionado para seguir explorando conexiones.</li>
+        </ul>
+      </div>
+      
+      <div class="help-section">
+        <h3>Administración</h3>
+        <p>Si tienes permisos de administrador, puedes:</p>
+        <ul>
+          <li>Hacer clic en "Administrar" para acceder al panel de administración.</li>
+          <li>Usar "Añadir Emoji" para crear un nuevo emoji en el mapa.</li>
+          <li>Gestionar grupos y relaciones entre emojis.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Scripts de Leaflet -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet-polylinedecorator/dist/leaflet.polylineDecorator.js"></script>
+  
+  <!-- Script principal integrado -->
+  <script>
+    // Objeto global para la aplicación
+    window.appMapa = {
+      map: null,
+      emojiMarkers: [],
+      emojiIntervals: [],
+      vinculos: [],
+      decorators: [],
+      emojiData: [],
+      selectedEmoji: null,
+      timeoutCartel: null
+    };
+
+    // Datos de ejemplo para emojis (simulando respuesta del servidor)
+    const datosEmojisEjemplo = [
+      {
+        id: 1,
+        emoji: "😊",
+        titulo: "Emoji Feliz",
+        descripcion: "Representa felicidad y alegría",
+        lat: -34.603722,
+        lng: -58.381592
+      },
+      {
+        id: 2,
+        emoji: "🚗",
+        titulo: "Automóvil",
+        descripcion: "Vehículo de transporte personal",
+        lat: -34.608722,
+        lng: -58.385592
+      },
+      {
+        id: 3,
+        emoji: "🍕",
+        titulo: "Pizza",
+        descripcion: "Comida italiana popular",
+        lat: -34.600722,
+        lng: -58.379592
+      },
+      {
+        id: 4,
+        emoji: "📱",
+        titulo: "Smartphone",
+        descripcion: "Dispositivo de comunicación móvil",
+        lat: -34.605722,
+        lng: -58.376592
+      },
+      {
+        id: 5,
+        emoji: "🏠",
+        titulo: "Casa",
+        descripcion: "Lugar donde vive la gente",
+        lat: -34.598722,
+        lng: -58.383592
+      },
+      {
+        id: 6,
+        emoji: "🌳",
+        titulo: "Árbol",
+        descripcion: "Planta de gran tamaño",
+        lat: -34.601722,
+        lng: -58.387592
+      }
+    ];
+
+    // Datos de ejemplo para emojis móviles
+    const datosEmojisMovilesEjemplo = [
+      {
+        id: 101,
+        emoji: "🚌",
+        titulo: "Autobús en movimiento",
+        descripcion: "Transporte público urbano",
+        lat_inicial: -34.603722,
+        lng_inicial: -58.371592,
+        lat_final: -34.613722,
+        lng_final: -58.391592,
+        velocidad: 0.0003,
+        mostrar_popup: true
+      },
+      {
+        id: 102,
+        emoji: "🚲",
+        titulo: "Bicicleta",
+        descripcion: "Transporte ecológico",
+        lat_inicial: -34.596722,
+        lng_inicial: -58.381592,
+        lat_final: -34.606722,
+        lng_final: -58.371592,
+        velocidad: 0.0002,
+        mostrar_popup: true
+      }
+    ];
+
+    // Datos de ejemplo para relaciones
+    const relacionesEjemplo = [
+      {
+        id: 1,
+        emoji_origen_id: 1,
+        emoji_destino_id: 3,
+        tipo: "le gusta",
+        descripcion: "A la persona feliz le gusta la pizza"
+      },
+      {
+        id: 2,
+        emoji_origen_id: 2,
+        emoji_destino_id: 4,
+        tipo: "usa",
+        descripcion: "En el auto se usa el smartphone"
+      },
+      {
+        id: 3,
+        emoji_origen_id: 5,
+        emoji_destino_id: 6,
+        tipo: "tiene",
+        descripcion: "La casa tiene un árbol"
+      },
+      {
+        id: 4,
+        emoji_origen_id: 1,
+        emoji_destino_id: 5,
+        tipo: "vive en",
+        descripcion: "La persona feliz vive en la casa"
+      }
+    ];
+    
+    // Inicializar cuando el DOM esté listo
+    document.addEventListener('DOMContentLoaded', function() {
+      initializeMap();
+      setupEventListeners();
+      
+      // Verificar si se pasó un ID de emoji en la URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const emojiId = urlParams.get('emoji_id');
+      
+      // Si hay un parámetro, mostrar ese elemento cuando el mapa esté listo
+      if (emojiId) {
+        setTimeout(() => {
+          mostrarRelacionesEmoji(parseInt(emojiId));
+        }, 1000);
+      }
+    });
+    
+    // Inicializar el mapa
+    function initializeMap() {
+      // Crear mapa centrado en un punto predeterminado
+      const map = L.map('map').setView([-34.603722, -58.381592], 15);
+      
+      // Añadir capa base de OpenStreetMap
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      }).addTo(map);
+      
+      // Guardar referencia al mapa
+      window.appMapa.map = map;
+      
+      // Mostrar coordenadas en la barra de estado
+      map.on('mousemove', function(e) {
+        document.querySelector('.status-coords').textContent = 
+          `Lat: ${e.latlng.lat.toFixed(6)}, Lng: ${e.latlng.lng.toFixed(6)}`;
+      });
+      
+      // Inicializar datos y añadir eventos
+      window.appMapa.emojiData = datosEmojisEjemplo;
+      window.appMapa.relaciones = relacionesEjemplo;
+      
+      // Añadir evento de zoom para actualizar tamaños
+      map.on('zoomend', actualizarTamanioIconos);
+      
+      // Cargar emojis estáticos
+      agregarEmojisAlMapa(datosEmojisEjemplo);
+      
+      // Cargar emojis móviles
+      agregarEmojisMoviles(datosEmojisMovilesEjemplo);
+      
+      // Actualizar barra de estado
+      document.querySelector('.status-info').textContent = 
+        `${datosEmojisEjemplo.length} emojis cargados, ${datosEmojisMovilesEjemplo.length} en movimiento`;
+    }
+    
+    // Configurar eventos de la interfaz
+    function setupEventListeners() {
+      // Evento para modal de ayuda
+      const helpButton = document.getElementById('help-button');
+      const helpModal = document.getElementById('help-modal');
+      const closeHelp = document.querySelector('.close-help');
+      
+      helpButton.addEventListener('click', function() {
+        helpModal.style.display = 'block';
+      });
+      
+      closeHelp.addEventListener('click', function() {
+        helpModal.style.display = 'none';
+      });
+      
+      window.addEventListener('click', function(event) {
+        if (event.target === helpModal) {
+          helpModal.style.display = 'none';
+        }
+      });
+      
+      // Evento para botón de añadir emoji
+      document.getElementById('add-emoji-button').addEventListener('click', function() {
+        // Activar modo de click para añadir emoji
+        activarModoAñadirEmoji();
+      });
+      
+      // Evento para cerrar panel de relaciones
+      document.getElementById('cerrar-relaciones').addEventListener('click', function() {
+        document.getElementById('relaciones-panel').style.display = 'none';
+        limpiarVinculos();
+      });
+    }
+    
+    // Función para crear icono de emoji
+    function crearIconoEmoji(emoji, options = {}) {
+      const escala = options.escala || calcularEscalaSegunZoom();
+      const tamanioBase = options.tamanioBase || 30;
+      const tamanioFinal = Math.max(15, tamanioBase * escala);
+      
+      // El contenedor debe tener un tamaño proporcional al emoji
+      const circuloBase = 40;
+      const circuloFinal = circuloBase * escala;
+      
+      const className = options.highlighted ? 'interactive highlighted-emoji' : 'interactive';
+      
+      return L.divIcon({
+        html: `<div class="emoji-contenedor" style="width:${circuloFinal}px; height:${circuloFinal}px;">
+                 <div class="emoji-icon-controlado ${className}" style="font-size:${tamanioFinal}px;">${emoji}</div>
+               </div>`,
+        className: '',
+        iconSize: [circuloFinal, circuloFinal],
+        iconAnchor: [circuloFinal/2, circuloFinal/2]
+      });
+    }
+    
+    // Calcular escala según nivel de zoom
+    function calcularEscalaSegunZoom() {
+      if (!window.appMapa || !window.appMapa.map) return 1;
+      
+      const zoom = window.appMapa.map.getZoom();
+      // Escala inversa: más pequeño cuando hay menos zoom
+      if (zoom <= 6) return 0.2;
+      if (zoom <= 8) return 0.3;
+      if (zoom <= 10) return 0.5;
+      if (zoom <= 12) return 0.7;
+      return 1; // Tamaño normal a partir de zoom 13+
+    }
+    
+    // Actualizar tamaño de iconos según el zoom
+    function actualizarTamanioIconos() {
+      if (!window.appMapa || !window.appMapa.map) return;
+      
+      const escala = calcularEscalaSegunZoom();
+      
+      // Actualizar visualmente los emojis animados sin recargar nada
+      if (window.appMapa.emojiMarkers && window.appMapa.emojiMarkers.length > 0) {
+        window.appMapa.emojiMarkers.forEach((marker) => {
+          const tamanioBase = 30;
+          const tamanioFinal = Math.max(15, tamanioBase * escala);
+          
+          // Tamaño del círculo contenedor
+          const circuloBase = 40;
+          const circuloFinal = circuloBase * escala;
+          
+          // Buscar el div interno del emoji
+          const iconElement = marker.getElement();
+          if (iconElement) {
+            // Buscar el contenedor del emoji
+            const contenedor = iconElement.querySelector('.emoji-contenedor');
+            if (contenedor) {
+              contenedor.style.width = `${circuloFinal}px`;
+              contenedor.style.height = `${circuloFinal}px`;
+            }
+            
+            // Buscar el emoji dentro del contenedor
+            const emojiDiv = iconElement.querySelector('.emoji-icon-controlado');
+            if (emojiDiv) {
+              emojiDiv.style.fontSize = `${tamanioFinal}px`;
+            }
+          }
+        });
+      }
+    }
+    
+    // Crear popup para un emoji
+    function crearPopupParaEmoji(emoji, titulo, descripcion, id) {
+      let popupContent = `
+        <div class="emoji-popup">
+          <div class="emoji-preview emoji-base">${emoji}</div>
+          <h3>${titulo || 'Sin título'}</h3>
+          <p>${descripcion || 'Sin descripción'}</p>
+          <button class="btn btn-primary btn-sm mt-2" onclick="mostrarRelacionesEmoji(${id})">
+            Ver relaciones
+          </button>
+        </div>
+      `;
+      
+      return popupContent;
+    }
+    
+    // Agregar emojis al mapa
+    function agregarEmojisAlMapa(emojis) {
+      if (!emojis || !Array.isArray(emojis) || emojis.length === 0) {
+        console.log("No hay emojis para mostrar en el mapa");
+        return;
+      }
+      
+      // Limpiar marcadores actuales si existen
+      limpiarMarcadoresEmojis();
+      
+      // Crear nuevos marcadores
+      emojis.forEach(emoji => {
+        if (!emoji.lat || !emoji.lng) return;
+        
+        const marker = L.marker([emoji.lat, emoji.lng], {
+          icon: crearIconoEmoji(emoji.emoji),
+          emojiId: emoji.id
+        });
+        
+        // Guardar el ID en el objeto del marcador para referencia futura
+        marker.emojiId = emoji.id;
+        
+        // Crear popup
+        marker.bindPopup(crearPopupParaEmoji(
+          emoji.emoji,
+          emoji.titulo,
+          emoji.descripcion,
+          emoji.id
+        ));
+        
+        // Añadir evento de clic
+        marker.on('click', function() {
+          // Aquí se podría mostrar información adicional si se requiere
+        });
+        
+        // Añadir al mapa
+        marker.addTo(window.appMapa.map);
+        
+        // Guardar referencia
+        window.appMapa.emojiMarkers.push(marker);
+      });
+    }
+    
+    // Limpiar marcadores de emojis
+    function limpiarMarcadoresEmojis() {
+      if (window.appMapa.emojiMarkers && window.appMapa.emojiMarkers.length > 0) {
+        window.appMapa.emojiMarkers.forEach(marker => {
+          if (window.appMapa.map.hasLayer(marker)) {
+            window.appMapa.map.removeLayer(marker);
+          }
+        });
+        window.appMapa.emojiMarkers = [];
+      }
+    }
+    
+    // Añadir emojis móviles al mapa
+    function agregarEmojisMoviles(emojisMoviles) {
+      // Limpiar intervalos existentes
+      limpiarIntervalosEmojis();
+      
+      // Si no hay datos, salir
+      if (!emojisMoviles || !Array.isArray(emojisMoviles) || emojisMoviles.length === 0) {
+        console.log("No hay emojis móviles para mostrar");
+        return;
+      }
+      
+      // Para cada emoji móvil
+      emojisMoviles.forEach(icono => {
+        // Extraer coordenadas
+        const inicioLat = parseFloat(icono.lat_inicial || 0);
+        const inicioLng = parseFloat(icono.lng_inicial || 0);
+        const finLat = parseFloat(icono.lat_final || 0);
+        const finLng = parseFloat(icono.lng_final || 0);
+        
+        // Verificar si hay datos válidos
+        if (isNaN(inicioLat) || isNaN(inicioLng) || isNaN(finLat) || isNaN(finLng)) {
+          console.error("Coordenadas inválidas para icono:", icono);
+          return;
+        }
+        
+        const emoji = icono.emoji || '🚀';
+        const velocidad = parseFloat(icono.velocidad) || 0.0003;
+        const titulo = icono.titulo || '';
+        const descripcion = icono.descripcion || '';
+        const mostrarPopup = icono.mostrar_popup == 1 || icono.mostrar_popup === true;
+        
+        // Crear posiciones para animación
+        let posicion = { lat: inicioLat, lng: inicioLng };
+        let direccion = 1; // 1 = hacia el final, -1 = hacia el inicio
+        
+        // Definir el ícono de Leaflet para el emoji con tamaño controlado
+        const emojiIcon = crearIconoEmoji(emoji);
+        
+        // Crear el marcador
+        let emojiMarker = L.marker([posicion.lat, posicion.lng], {
+          icon: emojiIcon
+        });
+        
+        // Añadir popup si se requiere
+        if (mostrarPopup && (titulo || descripcion)) {
+          const popupContent = crearPopupParaEmoji(
+            emoji, 
+            titulo, 
+            descripcion, 
+            icono.id
+          );
+          
+          emojiMarker.bindPopup(popupContent);
+        }
+        
+        // Añadir al mapa
+        emojiMarker.addTo(window.
